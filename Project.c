@@ -16,7 +16,14 @@ int main_menu(int height, int width);
 int handle_input(int height, int width);
 int OPTIONS(int height, int width);
 int MUSIC_SELECTION(int height, int width);
-void init_audio();
+void *play_music_background(void *arg);
+pthread_t music_thread;
+
+void start_music(const char *music_file) {
+    if (pthread_create(&music_thread, NULL, play_music_background, (void *)music_file) != 0) {
+        printf("Failed to create music thread\n");
+    }
+}
 void play_music(const char *file);
 void stop_music();
 int SCORE_BOARD(int height, int width);
@@ -251,8 +258,7 @@ int OPTIONS(int height, int width) {
     int n_options = sizeof(options) / sizeof(options[0]);
     int selected = 0;
     int key;
-    int current_music = 0; // Variable to store the selected music track
-
+    int current_music = 0;
     WINDOW *options_win = newwin(15, 40, (height - 15) / 2, (width - 40) / 2);
     box(options_win, 0, 0);
 
@@ -279,27 +285,23 @@ int OPTIONS(int height, int width) {
                 selected++;
                 if (selected >= n_options) selected = 0;
                 break;
-            case '\n': // ENTER key
-                if (selected == 0) { // Change Music
-                    current_music = MUSIC_SELECTION(height, width);
-                    if (current_music == 4){
-                        clear();
-                        refresh();
-                        break;
-                    }
-                    else if (current_music == 1){
-                        init_audio();
-                        play_music("c418_-_aria_math.mp3");
-                        SDL_Delay(20000);
+            case '\n':
+                if (selected == 0) {
+                    int current_music = MUSIC_SELECTION(height, width);
+                    if (current_music == 1) {
+                        start_music("c418_-_aria_math.mp3");
+                    } else if (current_music == 2) {
+                        start_music("rymykhs_ahng_amng_as.mp3");
+                    } else if (current_music == 3) {
+                        start_music("track3.mp3");
+                    } else if (current_music == 4) {
                         stop_music();
-                        clear();
-                        refresh();
                     }
-                    else if (current_music != -1) {
-                        clear();
-                        refresh();
-                    }
-                } else if (selected == n_options - 1) { // Back
+                    clear();
+                    refresh();
+                    break;
+                } 
+                else if (selected == n_options - 1) {
                     delwin(options_win);
                     return 1;
                 }
@@ -312,8 +314,8 @@ int MUSIC_SELECTION(int height, int width) {
     refresh();
 
     const char *music_tracks[] = {
-        "Track 1: Adventure",
-        "Track 2: Battle Theme",
+        "Track 1: Aria math",
+        "Track 2: Among us",
         "Track 3: Calm Forest",
         "Exit"
     };
@@ -347,8 +349,8 @@ int MUSIC_SELECTION(int height, int width) {
                 selected++;
                 if (selected >= n_tracks) selected = 0;
                 break;
-            case '\n': // ENTER key
-                return selected + 1; // Return the index of the selected track
+            case '\n':
+                return selected + 1; 
         }
     }
 }
@@ -383,17 +385,21 @@ int SCORE_BOARD(int height, int width) {
     wrefresh(score_win);
 
     int line = 2;
-    for (int i = 0; i < player_count && line < 18; i++) { // Prevent overflow
+    for (int i = 0; i < player_count && line < 18; i++) {
         mvwprintw(score_win, ++line, 2, "%-10s %5d %5d", players[i].name, players[i].age, players[i].score);
         wrefresh(score_win);
     }
 
-    mvwprintw(score_win, line + 2, 2, "Press any key to return...");
+    mvwprintw(score_win, 17, 19, "Press Esc to return...");
     wrefresh(score_win);
-
-    getch();
-    delwin(score_win);
-    return 1;
+    char ch;
+    while (1){
+        ch = getchar();
+        if (ch == 27){
+            delwin(score_win);
+            return 1;
+        }
+    }
 }
 int comparePlayers(const void *a, const void *b) {
     Player *playerA = (Player *)a;
@@ -433,16 +439,32 @@ int handle_input(int height, int width){
         }
     }
 }
-void init_audio() {
-    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
-        printw("Failed to initialize SDL audio: %s\n", SDL_GetError());
-        exit(1);
-    }
+void *play_music_background(void *arg) {
+    const char *music_file = (const char *)arg;
 
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-        printw("SDL_Mixer Error: %s\n", Mix_GetError());
-        exit(1);
+        printf("SDL_mixer could not initialize! Mix_Error: %s\n", Mix_GetError());
+        return NULL;
     }
+
+    Mix_Music *music = Mix_LoadMUS(music_file);
+    if (!music) {
+        printf("Error loading music: %s\n", Mix_GetError());
+        return NULL;
+    }
+
+    if (Mix_PlayMusic(music, -1) == -1) { // Loop indefinitely
+        printf("Error playing music: %s\n", Mix_GetError());
+    }
+
+    // Keep the thread alive while music is playing
+    while (Mix_PlayingMusic()) {
+        SDL_Delay(100); 
+    }
+
+    Mix_FreeMusic(music);
+    Mix_CloseAudio();
+    return NULL;
 }
 void play_music(const char *file) {
     Mix_Music *music = Mix_LoadMUS(file);
@@ -454,7 +476,10 @@ void play_music(const char *file) {
     Mix_PlayMusic(music, -1); // Play the music in a loop
 }
 void stop_music() {
-    Mix_HaltMusic();
-    Mix_CloseAudio();
+    Mix_HaltMusic();              // Stop the music
+    pthread_cancel(music_thread); // Terminate the thread
+    pthread_join(music_thread, NULL); // Wait for the thread to finish
 }
+
+
 
