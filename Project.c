@@ -13,20 +13,20 @@ typedef struct Player{
 int comparePlayers(const void *a, const void *b);
 int loading_screen();
 int main_menu(int height, int width);
-int handle_input(int height, int width);
+int handle_input(int height, int width, Player players[]);
 int OPTIONS(int height, int width);
 int MUSIC_SELECTION(int height, int width);
 void *play_music_background(void *arg);
 pthread_t music_thread;
-
 void start_music(const char *music_file);
 void play_music(const char *file);
 void stop_music();
-int SCORE_BOARD(int height, int width);
+int SCORE_BOARD(int height, int width, Player players[]);
+int new_player(int height, int width, Player players[]);
 
 
 int main(){
-    char ch;
+    Player players[100];
     initscr();
     int height, width;
     getmaxyx(stdscr, height, width);
@@ -38,7 +38,7 @@ int main(){
     loading_screen();
     int running = 1;
     while (running) {
-        running = handle_input(height, width);
+        running = handle_input(height, width, players);
     }
     endwin();
     return 0;
@@ -120,7 +120,7 @@ int main_menu(int ter_height, int ter_width) {
 
     int height = ter_height * 3 / 5, width = ter_width * 3 / 5, starty = ter_height/5, startx = ter_width/5;
     WINDOW *menu_win = newwin(height, width, starty, startx);
-    const char *menu_items[] = {"START THE GAME", "OPTIONS", "SCORE BOARD", "EXIT"};
+    const char *menu_items[] = {"START THE GAME","NEW PLAYER", "OPTIONS", "SCORE BOARD", "EXIT"};
     int n_items = sizeof(menu_items) / sizeof(menu_items[0]);
     int choice = 0;
     int key;
@@ -166,10 +166,10 @@ int main_menu(int ter_height, int ter_width) {
         for (int i = 0; i < n_items; i++) {
             if (i == choice) {
                 wattron(menu_win, A_REVERSE);
-                mvwprintw(menu_win, 6 + 6 * i, (width - 12) / 2, "%s", menu_items[i]);
+                mvwprintw(menu_win, 6 + 5 * i, (width - 12) / 2, "%s", menu_items[i]);
                 wattroff(menu_win, A_REVERSE);
             } else {
-                mvwprintw(menu_win, 6 + 6 * i, (width - 12) / 2, "%s", menu_items[i]);
+                mvwprintw(menu_win, 6 + 5 * i, (width - 12) / 2, "%s", menu_items[i]);
             }
         }
         wrefresh(menu_win);
@@ -300,20 +300,16 @@ int MUSIC_SELECTION(int height, int width) {
         }
     }
 }
-
-int SCORE_BOARD(int height, int width) {
+int SCORE_BOARD(int height, int width, Player players[]) {
     clear();
     refresh();
-
     FILE *scoreB = fopen("SCOREBOARD.txt", "r");
     if (!scoreB) {
         mvprintw(height / 2, (width - 20) / 2, "Unable to open scoreboard file!");
         refresh();
         getch();
         return 1;
-    }
-
-    Player players[100];
+    }    
     int player_count = 0;
 
     while (fscanf(scoreB, "%s %d %d", players[player_count].name, 
@@ -352,16 +348,17 @@ int comparePlayers(const void *a, const void *b) {
     Player *playerB = (Player *)b;
     return playerB->score - playerA->score;
 }
-int handle_input(int height, int width) {
+int handle_input(int height, int width, Player players[]) {
     while (1) {
         int selected_option = main_menu(height, width);
 
         switch (selected_option) {
             case 1:
-                
                 break;
-
             case 2:
+                new_player(height, width, players);
+                break;
+            case 3:
                 while (1) {
                     int selected = OPTIONS(height, width);
                     if (selected == 1) {
@@ -370,12 +367,12 @@ int handle_input(int height, int width) {
                 }
                 break;
 
-            case 3:
+            case 4:
                 clear();
-                SCORE_BOARD(height, width);
+                SCORE_BOARD(height, width, players);
                 break;
 
-            case 4: {
+            case 5: {
                 int confirm_selected = 0;
                 int key;
 
@@ -468,6 +465,97 @@ void stop_music() {
 void start_music(const char *music_file) {
     if (pthread_create(&music_thread, NULL, play_music_background, (void *)music_file) != 0) {
         printf("Failed to create music thread\n");
+    }
+}
+int new_player(int height, int width, Player players[]){
+    clear();
+    refresh();
+    FILE *player_data = fopen("SCOREBOARD.txt", "a");
+    if (!player_data){
+        mvprintw(height / 2, (width - 20) / 2, "Unable to open scoreboard file!");
+        refresh();
+        getch();
+        return 1;
+    }
+    WINDOW *new_player_win = newwin(30, 80, (height - 30) / 2, (width - 80) / 2);
+    box(new_player_win, 0, 0);
+    char* info[] = {"USER NAME:", "PASSWORD:", "EMAIL:"};
+    int n_options = sizeof(info) / sizeof(info[0]);
+    int selected = 0;
+    int key;
+    int current_music = 0;
+    char *USERNAME = (char*)malloc(40 * sizeof(char));
+    char *PASSWORD = (char*)malloc(40 * sizeof(char));
+    char *EMAIL = (char*)malloc(60 * sizeof(char));
+    while (1) {
+        mvwprintw(new_player_win, 1, 2, "FILL OUT THE INFORMATION:");
+        mvwprintw(new_player_win, 10, 30, "(PRESS R TO GENERATE RANDOM PASSWORD) ");
+        mvwprintw(new_player_win, 27, 30, "Press Esc to return...");
+        for (int i = 0; i < n_options; i++) {
+            if (i == selected) {
+                wattron(new_player_win, A_REVERSE);
+                mvwprintw(new_player_win, 5 + 5 * i, 2, "%s", info[i]);
+                wattroff(new_player_win, A_REVERSE);
+            } else {
+                mvwprintw(new_player_win, 5 + 5 * i, 2, "%s", info[i]);
+            }
+        }
+    wrefresh(new_player_win);
+     key = getch();
+        switch (key) {
+            case KEY_UP:
+                selected--;
+                if (selected < 0) selected = n_options - 1;
+                break;
+            case KEY_DOWN:
+                selected++;
+                if (selected >= n_options) selected = 0;
+                break;
+            case 27:
+                delwin(new_player_win);
+                return 1;
+                break;
+            case '\n':
+                if (selected == 0) {
+                    wmove(new_player_win, 5 , 14);
+                    echo();
+                    wrefresh(new_player_win);
+                    wscanw(new_player_win, "%s", USERNAME);
+                    wrefresh(new_player_win);
+                    key = getch();
+                    if (key == '\n'){
+                        if (PASSWORD != NULL && USERNAME != NULL && EMAIL != NULL){
+                            fprintf(player_data, "%s    %s    %s\n", USERNAME, PASSWORD, EMAIL);
+                        }
+                        fclose(player_data);
+                        break;
+                    }
+                    break;
+                } 
+                else if (selected == 1){
+                    wmove(new_player_win, 10 , 14);
+                    echo();
+                    wrefresh(new_player_win);
+                    wscanw(new_player_win, "%s", PASSWORD);
+                    wrefresh(new_player_win);
+                    key = getch();
+                    if (key == '\n'){
+                        break;
+                    }
+                }
+                else if (selected == 2) {
+                    wmove(new_player_win, 15 , 14);
+                    echo();
+                    wrefresh(new_player_win);
+                    wscanw(new_player_win, "%s", EMAIL);
+                    wrefresh(new_player_win);
+                    key = getch();
+                    if (key == '\n'){
+                        break;
+                    }
+                }
+                break;
+        }
     }
 }
 
