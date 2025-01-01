@@ -19,11 +19,7 @@ int MUSIC_SELECTION(int height, int width);
 void *play_music_background(void *arg);
 pthread_t music_thread;
 
-void start_music(const char *music_file) {
-    if (pthread_create(&music_thread, NULL, play_music_background, (void *)music_file) != 0) {
-        printf("Failed to create music thread\n");
-    }
-}
+void start_music(const char *music_file);
 void play_music(const char *file);
 void stop_music();
 int SCORE_BOARD(int height, int width);
@@ -40,15 +36,12 @@ int main(){
     start_color();
     bkgd(COLOR_BLACK);
     loading_screen();
-    handle_input(height, width);
-    // Clear screen and display the result
-    
-    // while ((ch = getchar()) != 27) {  // 27 is the ESC key
-    //     handle_input(ch);
-    // }
+    int running = 1;
+    while (running) {
+        running = handle_input(height, width);
+    }
     endwin();
-
-
+    return 0;
 }
 
 int loading_screen(){
@@ -118,53 +111,6 @@ int loading_screen(){
     // attroff(COLOR_PAIR(1));
     refresh();
 
-    // int key_pressed = 0; // Flag to check if a key is pressed
-    // char ch = 0;
-    // nodelay(stdscr, TRUE);
-    // while (1) {
-    //     // Top side of the rectangle
-    //     for (int i = 0; i < 67 && !key_pressed; i++) {
-    //         mvprintw(39, 63 + i, "@");
-    //         napms(50); // Adjust speed
-    //         refresh();
-    //         mvprintw(39, 63 + i, " ");
-    //         ch = getchar();
-    //         if (ch != 0){
-    //             break;
-    //         }
-    //     }
-    //     for (int i = 0; i < 5 && !key_pressed; i++) {
-    //         mvprintw(39 + i, 129, "@");
-    //         napms(50);
-    //         refresh();
-    //         mvprintw(39 + i, 129, " ");
-    //         ch = getchar();
-    //         if (ch != 0){
-    //             break;
-    //         }
-    //     }
-    //     for (int i = 67; i > 0 && !key_pressed; i--) {
-    //         mvprintw(43, 62 + i, "@");
-    //         napms(50);
-    //         refresh();
-    //         mvprintw(43, 62 + i, " ");
-    //         ch = getchar();
-    //         if (ch != 0){
-    //             break;
-    //         }
-    //     }
-    //     for (int i = 5; i > 0 && !key_pressed; i--) {
-    //         mvprintw(38 + i, 63, "@");
-    //         napms(50);
-    //         refresh();
-    //         mvprintw(38 + i, 63, " ");
-    //         ch = getchar();
-    //         if (ch != 0){
-    //             break;
-    //         }
-    //     }
-    // }
-
     getchar();
     return 1;
 }
@@ -210,12 +156,12 @@ int main_menu(int ter_height, int ter_width) {
         mvwprintw(menu_win, 30 - 12, 2, "           4       *$$F            ");
         mvwprintw(menu_win, 31 - 12, 2, "           4        $$             "); 
         mvwprintw(menu_win, 32 - 12, 2, "           4       .$F             ");                                                
-        mvwprintw(menu_win, 33 - 12, 2, "           4       dP              ");
-        mvwprintw(menu_win, 34 - 12, 2, "           4      F                ");
-        mvwprintw(menu_win, 35 - 12, 2, "           4     @                 ");
-        mvwprintw(menu_win, 36 - 12, 2, "           4    D                  ");
-        mvwprintw(menu_win, 37 - 12, 2, "           J.  \".                  ");
-        mvwprintw(menu_win, 38 - 12, 2, "          '$$                      ");
+        mvwprintw(menu_win, 33 - 12, 2, "           4       do              ");
+        mvwprintw(menu_win, 34 - 12, 2, "           4      P                ");
+        mvwprintw(menu_win, 35 - 12, 2, "           4     2                 ");
+        mvwprintw(menu_win, 36 - 12, 2, "           4    0                  ");
+        mvwprintw(menu_win, 37 - 12, 2, "           J.  2                  ");
+        mvwprintw(menu_win, 38 - 12, 2, "          '$$ 4                     ");
 
         for (int i = 0; i < n_items; i++) {
             if (i == choice) {
@@ -295,7 +241,7 @@ int OPTIONS(int height, int width) {
                     } else if (current_music == 3) {
                         start_music("track3.mp3");
                     } else if (current_music == 4) {
-                        stop_music();
+                        stop_music("bad-piggies-theme.mp3");
                     }
                     clear();
                     refresh();
@@ -314,9 +260,9 @@ int MUSIC_SELECTION(int height, int width) {
     refresh();
 
     const char *music_tracks[] = {
-        "Track 1: Aria math",
-        "Track 2: Among us",
-        "Track 3: Calm Forest",
+        "Track 1: ARIA MATH",
+        "Track 2: AMONG US",
+        "Track 3: BAD PIGGIES",
         "Exit"
     };
     int n_tracks = sizeof(music_tracks) / sizeof(music_tracks[0]);
@@ -386,7 +332,7 @@ int SCORE_BOARD(int height, int width) {
 
     int line = 2;
     for (int i = 0; i < player_count && line < 18; i++) {
-        mvwprintw(score_win, ++line, 2, "%-10s %5d %5d", players[i].name, players[i].age, players[i].score);
+        mvwprintw(score_win, ++line, 2, "%-10s %15d %15d", players[i].name, players[i].age, players[i].score);
         wrefresh(score_win);
     }
 
@@ -406,34 +352,75 @@ int comparePlayers(const void *a, const void *b) {
     Player *playerB = (Player *)b;
     return playerB->score - playerA->score;
 }
-int handle_input(int height, int width){
+int handle_input(int height, int width) {
     while (1) {
         int selected_option = main_menu(height, width);
 
         switch (selected_option) {
             case 1:
-                mvprintw(1, 1, "Start Game Selected");
-                refresh();
-                getch();
+                
                 break;
+
             case 2:
                 while (1) {
                     int selected = OPTIONS(height, width);
                     if (selected == 1) {
-                        break;      
+                        break;
                     }
                 }
                 break;
+
             case 3:
+                clear();
                 SCORE_BOARD(height, width);
                 break;
-            case 4:
-                clear();
-                mvprintw(height / 2, width / 2 - 4, "EXITING...");
-                refresh();
-                napms(300); 
-                endwin();   
-                return 0; 
+
+            case 4: {
+                int confirm_selected = 0;
+                int key;
+
+                while (1) {
+                    clear();
+                    mvprintw(height / 2, width / 2 - 6, "ARE YOU SURE?");
+                    
+                    if (confirm_selected == 0) {
+                        attron(A_BOLD | A_REVERSE);
+                        mvprintw(height / 2 + 2, width / 2 - 6, "YES");
+                        attroff(A_BOLD | A_REVERSE);
+                        mvprintw(height / 2 + 2, width / 2 + 6, "NO");
+                    } else {
+                        mvprintw(height / 2 + 2, width / 2 - 6, "YES");
+                        attron(A_BOLD | A_REVERSE);
+                        mvprintw(height / 2 + 2, width / 2 + 6, "NO");
+                        attroff(A_BOLD | A_REVERSE);
+                    }
+
+                    refresh();
+                    key = getch();
+                    switch (key) {
+                        case KEY_LEFT:
+                            confirm_selected = 0;
+                            break;
+                        case KEY_RIGHT:
+                            confirm_selected = 1;
+                            break;
+                        case '\n':
+                            if (confirm_selected == 0) {
+                                clear();
+                                mvprintw(height / 2, width / 2 - 4, "EXITING...");
+                                refresh();
+                                napms(2000);
+                                endwin();
+                                return 0;
+                            } else if (confirm_selected == 1) {
+                                return 1;
+                            }
+                            break;
+                    }
+                }
+                break;
+            }
+
             default:
                 break;
         }
@@ -453,11 +440,9 @@ void *play_music_background(void *arg) {
         return NULL;
     }
 
-    if (Mix_PlayMusic(music, -1) == -1) { // Loop indefinitely
+    if (Mix_PlayMusic(music, -1) == -1) {
         printf("Error playing music: %s\n", Mix_GetError());
     }
-
-    // Keep the thread alive while music is playing
     while (Mix_PlayingMusic()) {
         SDL_Delay(100); 
     }
@@ -473,12 +458,17 @@ void play_music(const char *file) {
         return;
     }
 
-    Mix_PlayMusic(music, -1); // Play the music in a loop
+    Mix_PlayMusic(music, -1);
 }
 void stop_music() {
-    Mix_HaltMusic();              // Stop the music
-    pthread_cancel(music_thread); // Terminate the thread
-    pthread_join(music_thread, NULL); // Wait for the thread to finish
+    Mix_HaltMusic();          
+    pthread_cancel(music_thread);
+    pthread_join(music_thread, NULL); 
+}
+void start_music(const char *music_file) {
+    if (pthread_create(&music_thread, NULL, play_music_background, (void *)music_file) != 0) {
+        printf("Failed to create music thread\n");
+    }
 }
 
 
