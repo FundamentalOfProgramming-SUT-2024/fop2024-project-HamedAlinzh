@@ -5,9 +5,12 @@
 #include <SDL2/SDL.h>
 #include <pthread.h>
 #include <SDL2/SDL_mixer.h>
+#include<time.h>
+#include<regex.h>
 typedef struct Player{
     char name[50];
-    int age;
+    char password[40];
+    char email[60];
     int score;
 } Player;
 int comparePlayers(const void *a, const void *b);
@@ -23,7 +26,8 @@ void play_music(const char *file);
 void stop_music();
 int SCORE_BOARD(int height, int width, Player players[]);
 int new_player(int height, int width, Player players[]);
-
+int checkpass(char password[]);
+int isValidEmail(const char *email);
 
 int main(){
     Player players[100];
@@ -36,6 +40,7 @@ int main(){
     start_color();
     bkgd(COLOR_BLACK);
     loading_screen();
+    start_music("c418_-_aria_math.mp3");
     int running = 1;
     while (running) {
         running = handle_input(height, width, players);
@@ -136,13 +141,27 @@ int main_menu(int ter_height, int ter_width) {
         mvwprintw(menu_win, 3, 3, "       / `'=) (='` \\");
         mvwprintw(menu_win, 4, 3, "      /.-.-.\\ /.-.-.\\ ");
         mvwprintw(menu_win, 5, 3, "      `      \"      `");            
-        mvwprintw(menu_win, height - 5, 70, "      /| ________________");       
-        mvwprintw(menu_win, height - 4, 70, "O|===|* >________________>");
-        mvwprintw(menu_win, height - 3, 70, "      \\|");
-        mvwprintw(menu_win, 9, 70, "        _   ,_,   _");                                                
-        mvwprintw(menu_win, 10, 70, "       / `'=) (='` \\");
-        mvwprintw(menu_win, 11, 70, "      /.-.-.\\ /.-.-.\\ ");
-        mvwprintw(menu_win, 12, 70, "      `      \"      `"); 
+        mvwprintw(menu_win, height - 7, 70, "      /| ________________");       
+        mvwprintw(menu_win, height - 6, 70, "O|===|* >________________>");
+        mvwprintw(menu_win, height - 5, 70, "      \\|");
+        mvwprintw(menu_win, 3, 75, "                      ____    ");   
+        mvwprintw(menu_win, 4, 75, "                     / ___`\\  ");  
+        mvwprintw(menu_win, 5, 75, "         /|         ( (   \\ \\ ");  
+        mvwprintw(menu_win, 6, 75, "    |^v^v  V|        \\ \\/) ) )");
+        mvwprintw(menu_win, 7, 75, "    \\  ____ /         \\_/ / / ");  
+        mvwprintw(menu_win, 8, 75, "    ,Y`    `,            / /  "); 
+        mvwprintw(menu_win, 9, 75, "    ||  -  -)           { }   ");
+        mvwprintw(menu_win, 10, 75, "    \\\\   _\\ |           | |   "); 
+        mvwprintw(menu_win, 11, 75, "     \\\\ / _`\\_         / /    "); 
+        mvwprintw(menu_win, 12, 75, "     / |  ~ | ``\\     _|_|    "); 
+        mvwprintw(menu_win, 13, 75, "  ,-`  \\    |  \\ \\  ,//(_}    "); 
+        mvwprintw(menu_win, 14, 75, " /      |   |   | \\/  \\| |    ");   
+        mvwprintw(menu_win, 15, 75, "|       |   |   | '   ,\\ \\    ");
+        mvwprintw(menu_win, 16, 75, "|     | \\   /  /\\  _/`  | |   "); 
+        mvwprintw(menu_win, 17, 75, "\\     |  | |   | ``     | |   "); 
+        mvwprintw(menu_win, 18, 75, " |    \\  \\ |   |        | |   "); 
+        mvwprintw(menu_win, 19, 75, " |    |   |/   |        / /   ");
+        mvwprintw(menu_win, 20, 75, " |    |        |        | |   "); 
         mvwprintw(menu_win, 20 - 12, 2, "          4$$-.                    ");                                                
         mvwprintw(menu_win, 21 - 12, 2, "           4   \".                 ");
         mvwprintw(menu_win, 22 - 12, 2, "           4    ^.                 ");
@@ -197,7 +216,7 @@ int OPTIONS(int height, int width) {
     refresh();
     const char *options[] = {
         "CHANGE MUSIC",
-        "CHARACTER COLOR",
+        "CHARACTER DESIGN",
         "ADJUST DIFFICULTY",
         "BACK"
     };
@@ -239,7 +258,7 @@ int OPTIONS(int height, int width) {
                     } else if (current_music == 2) {
                         start_music("rymykhs_ahng_amng_as.mp3");
                     } else if (current_music == 3) {
-                        start_music("track3.mp3");
+                        start_music("bad-piggies-theme.mp3");
                     } else if (current_music == 4) {
                         stop_music("bad-piggies-theme.mp3");
                     }
@@ -263,7 +282,7 @@ int MUSIC_SELECTION(int height, int width) {
         "Track 1: ARIA MATH",
         "Track 2: AMONG US",
         "Track 3: BAD PIGGIES",
-        "Exit"
+        "DISCONNECT"
     };
     int n_tracks = sizeof(music_tracks) / sizeof(music_tracks[0]);
     int selected = 0;
@@ -312,8 +331,8 @@ int SCORE_BOARD(int height, int width, Player players[]) {
     }    
     int player_count = 0;
 
-    while (fscanf(scoreB, "%s %d %d", players[player_count].name, 
-                  &players[player_count].age, &players[player_count].score) == 3) {
+    while (fscanf(scoreB, "%s %s %d", players[player_count].name, 
+                  players[player_count].password, &players[player_count].score) == 3) {
         player_count++;
         if (player_count >= 100) {
             break;
@@ -328,7 +347,7 @@ int SCORE_BOARD(int height, int width, Player players[]) {
 
     int line = 2;
     for (int i = 0; i < player_count && line < 18; i++) {
-        mvwprintw(score_win, ++line, 2, "%-10s %15d %15d", players[i].name, players[i].age, players[i].score);
+        mvwprintw(score_win, ++line, 2, "%-10s %15s %15d", players[i].name, players[i].password, players[i].score);
         wrefresh(score_win);
     }
 
@@ -467,41 +486,54 @@ void start_music(const char *music_file) {
         printf("Failed to create music thread\n");
     }
 }
-int new_player(int height, int width, Player players[]){
+int new_player(int height, int width, Player players[]) {
     clear();
     refresh();
-    FILE *player_data = fopen("SCOREBOARD.txt", "a");
-    if (!player_data){
+    FILE *player_data = fopen("SCOREBOARD.txt", "a+");
+    if (!player_data) {
         mvprintw(height / 2, (width - 20) / 2, "Unable to open scoreboard file!");
         refresh();
         getch();
         return 1;
     }
+
+    int player_count = 0;
+    while (fscanf(player_data, "%s", players[player_count].name) == 1) {
+        player_count++;
+        if (player_count >= 100) {
+            break;
+        }
+    }
+
     WINDOW *new_player_win = newwin(30, 80, (height - 30) / 2, (width - 80) / 2);
     box(new_player_win, 0, 0);
-    char* info[] = {"USER NAME:", "PASSWORD:", "EMAIL:"};
+
+    char *info[] = {"USER NAME:", "PASSWORD:", "EMAIL:"};
     int n_options = sizeof(info) / sizeof(info[0]);
     int selected = 0;
     int key;
-    int current_music = 0;
-    char *USERNAME = (char*)malloc(40 * sizeof(char));
-    char *PASSWORD = (char*)malloc(40 * sizeof(char));
-    char *EMAIL = (char*)malloc(60 * sizeof(char));
+
+    char USERNAME[50] = {0};
+    char PASSWORD[50] = {0};
+    char EMAIL[60] = {0};
+
     while (1) {
         mvwprintw(new_player_win, 1, 2, "FILL OUT THE INFORMATION:");
-        mvwprintw(new_player_win, 10, 30, "(PRESS R TO GENERATE RANDOM PASSWORD) ");
-        mvwprintw(new_player_win, 27, 30, "Press Esc to return...");
+        mvwprintw(new_player_win, 25, 40, "(PRESS R TO GENERATE RANDOM PASSWORD) ");
+        mvwprintw(new_player_win, 1, 44, "PRESS S TO SAVE!");
+        mvwprintw(new_player_win, 28, 30, "PRESS ESC TO RETURN...");
         for (int i = 0; i < n_options; i++) {
             if (i == selected) {
                 wattron(new_player_win, A_REVERSE);
-                mvwprintw(new_player_win, 5 + 5 * i, 2, "%s", info[i]);
+                mvwprintw(new_player_win, 5 + 7 * i, 2, "%s", info[i]);
                 wattroff(new_player_win, A_REVERSE);
             } else {
-                mvwprintw(new_player_win, 5 + 5 * i, 2, "%s", info[i]);
+                mvwprintw(new_player_win, 5 + 7 * i, 2, "%s", info[i]);
             }
         }
-    wrefresh(new_player_win);
-     key = getch();
+        wrefresh(new_player_win);
+
+        key = getch();
         switch (key) {
             case KEY_UP:
                 selected--;
@@ -511,53 +543,151 @@ int new_player(int height, int width, Player players[]){
                 selected++;
                 if (selected >= n_options) selected = 0;
                 break;
-            case 27:
-                delwin(new_player_win);
-                return 1;
-                break;
-            case '\n':
+            case '\n': 
+                echo();
                 if (selected == 0) {
-                    wmove(new_player_win, 5 , 14);
-                    echo();
+                    
+                    curs_set(1);
+                    wmove(new_player_win, 5, 14);
                     wrefresh(new_player_win);
-                    wscanw(new_player_win, "%s", USERNAME);
-                    wrefresh(new_player_win);
-                    key = getch();
-                    if (key == '\n'){
-                        if (PASSWORD != NULL && USERNAME != NULL && EMAIL != NULL){
-                            fprintf(player_data, "%s    %s    %s\n", USERNAME, PASSWORD, EMAIL);
+
+                    while (1) {
+                        wgetnstr(new_player_win, USERNAME, sizeof(USERNAME) - 1);
+                        int username_exists = 0;
+
+                        for (int i = 0; i < player_count; i++) {
+                            if (strcmp(players[i].name, USERNAME) == 0) {
+                                username_exists = 1;
+                                break;
+                            }
                         }
-                        fclose(player_data);
-                        break;
+
+                        if (username_exists) {
+                            mvwprintw(new_player_win, 5, 14, "                 ");
+                            mvwprintw(new_player_win, 7, 14, "USERNAME NOT AVAILABLE!");
+                            wrefresh(new_player_win);
+                            wmove(new_player_win, 5, 14); 
+                            continue;
+                        } else {
+                            mvwprintw(new_player_win, 7, 14, "                           ");
+                            wrefresh(new_player_win);
+                            break;
+                        }
                     }
-                    break;
-                } 
-                else if (selected == 1){
-                    wmove(new_player_win, 10 , 14);
-                    echo();
-                    wrefresh(new_player_win);
-                    wscanw(new_player_win, "%s", PASSWORD);
-                    wrefresh(new_player_win);
-                    key = getch();
-                    if (key == '\n'){
-                        break;
+                    curs_set(0);
+                } else if (selected == 1) { 
+                    mvwprintw(new_player_win, 12, 14, "                              "); 
+                    curs_set(1);
+                    while (1){
+                        wmove(new_player_win, 12, 14); 
+                        wrefresh(new_player_win);
+                        wgetnstr(new_player_win, PASSWORD, sizeof(PASSWORD) - 1);
+                        if (strlen(PASSWORD) < 7){
+                            mvwprintw(new_player_win, 12, 14, "                       ");
+                            mvwprintw(new_player_win, 14, 14, "PASSWORD MUST HAVE AT LEAST 7 CHARACTERS!");
+                            wrefresh(new_player_win);
+                            wmove(new_player_win, 12, 14);
+                            continue;
+                        }
+                        else if (checkpass(PASSWORD) == 0){
+                            mvwprintw(new_player_win, 12, 14, "                 ");
+                            mvwprintw(new_player_win, 16, 14, "YOU HAVE TO USE AT LEAST 1 UPPERCASE AND 1 LOWERCASE!");
+                            wrefresh(new_player_win);
+                            wmove(new_player_win, 12, 14);
+                            continue;
+                        }
+                        else {
+                                mvwprintw(new_player_win, 16, 14, "                                                     ");
+                                mvwprintw(new_player_win, 14, 14, "                                                 ");
+                                wrefresh(new_player_win);
+                                break; 
+                        }
                     }
+                    curs_set(0);
+                } else if (selected == 2) { 
+                    mvwprintw(new_player_win, 19, 14, "                                                ");
+                    curs_set(1);
+                    while (1){
+                        wmove(new_player_win, 19, 14); 
+                        wrefresh(new_player_win);
+                        wgetnstr(new_player_win, EMAIL, sizeof(EMAIL) - 1);
+                        if (isValidEmail(EMAIL) == 0){
+                            mvwprintw(new_player_win, 19, 14, "                 ");
+                            mvwprintw(new_player_win, 21, 14, "INVALID EMAIL FORMAT!");
+                            wrefresh(new_player_win);
+                            wmove(new_player_win, 19, 14);
+                            continue;
+                        }
+                        else{
+                            mvwprintw(new_player_win, 21, 14, "                                        ");
+                            wrefresh(new_player_win);
+                            break; 
+                        }
+                    }
+                    curs_set(0);
                 }
-                else if (selected == 2) {
-                    wmove(new_player_win, 15 , 14);
-                    echo();
+                noecho();
+                break;
+            case 'r':
+                if (selected == 1) {
+                    snprintf(PASSWORD, sizeof(PASSWORD), "Random%d", rand() % 10000);
+                    mvwprintw(new_player_win, 10, 14, "                              ");
+                    mvwprintw(new_player_win, 10, 14, "%s", PASSWORD);
                     wrefresh(new_player_win);
-                    wscanw(new_player_win, "%s", EMAIL);
-                    wrefresh(new_player_win);
-                    key = getch();
-                    if (key == '\n'){
-                        break;
-                    }
                 }
+                break;
+            case 'S':
+            case 's':
+                if (strlen(USERNAME) > 0 && strlen(PASSWORD) > 0 && strlen(EMAIL) > 0) {
+                    fprintf(player_data, "%s    %s    %s\n", USERNAME, PASSWORD, EMAIL);
+                    fclose(player_data);
+                    delwin(new_player_win);
+                    return 0;
+                } else {
+                    mvwprintw(new_player_win, 25, 2, "ALL FIELDS MUST BE FILLED!");
+                    wrefresh(new_player_win);
+                }
+                break;
+            case 27:
+                return 0;
                 break;
         }
     }
 }
-
+int checkpass(char password[]){
+    int hasU  = 0;
+    int hasL = 0;
+    int passlen = strlen(password);
+    for (int i = 0; i < passlen; i++){
+        if (password[i] >= 'A' && password[i] <= 'Z'){
+            hasU = 1;
+        }
+    }
+    for (int i = 0; i < passlen; i++){
+        if (password[i] >= 'a' && password[i] <= 'z'){
+            hasL = 1;
+        }
+    }
+    if (hasU && hasL){
+        return 1;
+    }
+    return 0;
+}
+int isValidEmail(const char *email) {
+    const char *pattern = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
+    regex_t regex;
+    int result = regcomp(&regex, pattern, REG_EXTENDED);
+    if (result) {
+        fprintf(stderr, "Could not compile regex\n");
+        return 0;
+    }
+    result = regexec(&regex, email, 0, NULL, 0);
+    regfree(&regex);
+    if (result == 0) {
+        return 1;  // Valid email
+    } else {
+        return 0;  // Invalid email
+    }
+}
 
 
