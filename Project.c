@@ -12,7 +12,10 @@ typedef struct Player{
     char password[40];
     char email[60];
     int score;
+    int color;
+    char character;
 } Player;
+int load_players(Player players[], const char *filename);
 int comparePlayers(const void *a, const void *b);
 int loading_screen();
 int main_menu(int height, int width);
@@ -27,10 +30,15 @@ void stop_music();
 int SCORE_BOARD(int height, int width, Player players[]);
 int new_player(int height, int width, Player players[]);
 int checkpass(char password[]);
+char *randompass();
 int isValidEmail(const char *email);
+int CHAR_DESIGN(int height, int width);
+int start_menu(int height, int width, Player players[]);
+int login(int height, int width, Player players[]);
 
 int main(){
     Player players[100];
+    int player_num = load_players(players, "SCOREBOARD.txt");
     initscr();
     int height, width;
     getmaxyx(stdscr, height, width);
@@ -125,7 +133,7 @@ int main_menu(int ter_height, int ter_width) {
 
     int height = ter_height * 3 / 5, width = ter_width * 3 / 5, starty = ter_height/5, startx = ter_width/5;
     WINDOW *menu_win = newwin(height, width, starty, startx);
-    const char *menu_items[] = {"START THE GAME","NEW PLAYER", "OPTIONS", "SCORE BOARD", "EXIT"};
+    const char *menu_items[] = {"START THE GAME", "OPTIONS", "SCORE BOARD", "EXIT"};
     int n_items = sizeof(menu_items) / sizeof(menu_items[0]);
     int choice = 0;
     int key;
@@ -225,10 +233,11 @@ int OPTIONS(int height, int width) {
     int key;
     int current_music = 0;
     WINDOW *options_win = newwin(15, 40, (height - 15) / 2, (width - 40) / 2);
-    box(options_win, 0, 0);
+    // box(options_win, 0, 0);
 
     while (1) {
         mvwprintw(options_win, 1, 2, "OPTIONS");
+        box(options_win, 0, 0);
         for (int i = 0; i < n_options; i++) {
             if (i == selected) {
                 wattron(options_win, A_REVERSE);
@@ -266,6 +275,10 @@ int OPTIONS(int height, int width) {
                     refresh();
                     break;
                 } 
+                else if (selected == 1){
+                    int character_setup = CHAR_DESIGN(height, width);
+                    wrefresh(options_win);
+                }
                 else if (selected == n_options - 1) {
                     delwin(options_win);
                     return 1;
@@ -288,7 +301,7 @@ int MUSIC_SELECTION(int height, int width) {
     int selected = 0;
     int key;
 
-    WINDOW *music_win = newwin(10, 40, (height - 10) / 2, (width - 40) / 2);
+    WINDOW *music_win = newwin(15, 40, (height - 15) / 2, (width - 40) / 2);
     box(music_win, 0, 0);
 
     while (1) {
@@ -296,10 +309,10 @@ int MUSIC_SELECTION(int height, int width) {
         for (int i = 0; i < n_tracks; i++) {
             if (i == selected) {
                 wattron(music_win, A_REVERSE);
-                mvwprintw(music_win, 3 + i, 2, "%s", music_tracks[i]);
+                mvwprintw(music_win, 3 + 2 * i, 2, "%s", music_tracks[i]);
                 wattroff(music_win, A_REVERSE);
             } else {
-                mvwprintw(music_win, 3 + i, 2, "%s", music_tracks[i]);
+                mvwprintw(music_win, 3 + 2 * i, 2, "%s", music_tracks[i]);
             }
         }
         wrefresh(music_win);
@@ -316,6 +329,8 @@ int MUSIC_SELECTION(int height, int width) {
                 break;
             case '\n':
                 return selected + 1; 
+            case 27:
+                return 0;
         }
     }
 }
@@ -329,10 +344,11 @@ int SCORE_BOARD(int height, int width, Player players[]) {
         getch();
         return 1;
     }    
+    char dummy[100];
     int player_count = 0;
 
-    while (fscanf(scoreB, "%s %s %d", players[player_count].name, 
-                  players[player_count].password, &players[player_count].score) == 3) {
+    while (fscanf(scoreB, "%s %s %s %d", players[player_count].name, 
+                  players[player_count].password, dummy, &players[player_count].score) == 4) {
         player_count++;
         if (player_count >= 100) {
             break;
@@ -344,10 +360,9 @@ int SCORE_BOARD(int height, int width, Player players[]) {
     box(score_win, 0, 0);
     mvwprintw(score_win, 1, 2, "SCOREBOARD");
     wrefresh(score_win);
-
     int line = 2;
     for (int i = 0; i < player_count && line < 18; i++) {
-        mvwprintw(score_win, ++line, 2, "%-10s %15s %15d", players[i].name, players[i].password, players[i].score);
+        mvwprintw(score_win, ++line, 2, "%-10s     %15d", players[i].name, players[i].score);
         wrefresh(score_win);
     }
 
@@ -373,11 +388,9 @@ int handle_input(int height, int width, Player players[]) {
 
         switch (selected_option) {
             case 1:
+                start_menu(height, width, players);
                 break;
             case 2:
-                new_player(height, width, players);
-                break;
-            case 3:
                 while (1) {
                     int selected = OPTIONS(height, width);
                     if (selected == 1) {
@@ -386,12 +399,12 @@ int handle_input(int height, int width, Player players[]) {
                 }
                 break;
 
-            case 4:
+            case 3:
                 clear();
                 SCORE_BOARD(height, width, players);
                 break;
 
-            case 5: {
+            case 4: {
                 int confirm_selected = 0;
                 int key;
 
@@ -504,7 +517,7 @@ int new_player(int height, int width, Player players[]) {
             break;
         }
     }
-
+    fclose(player_data);
     WINDOW *new_player_win = newwin(30, 80, (height - 30) / 2, (width - 80) / 2);
     box(new_player_win, 0, 0);
 
@@ -630,9 +643,11 @@ int new_player(int height, int width, Player players[]) {
                 break;
             case 'r':
                 if (selected == 1) {
-                    snprintf(PASSWORD, sizeof(PASSWORD), "Random%d", rand() % 10000);
-                    mvwprintw(new_player_win, 10, 14, "                              ");
-                    mvwprintw(new_player_win, 10, 14, "%s", PASSWORD);
+                    char *random_pass = (char*)malloc(20 * sizeof(char));
+                    random_pass = randompass();
+                    strcpy(PASSWORD, random_pass);
+                    mvwprintw(new_player_win, 12, 14, "                              ");
+                    mvwprintw(new_player_win, 12, 14, "%s", PASSWORD);
                     wrefresh(new_player_win);
                 }
                 break;
@@ -649,6 +664,7 @@ int new_player(int height, int width, Player players[]) {
                 }
                 break;
             case 27:
+                delwin(new_player_win);
                 return 0;
                 break;
         }
@@ -673,6 +689,46 @@ int checkpass(char password[]){
     }
     return 0;
 }
+char *randompass(){
+    srand(time(0));
+    int a = rand() % 5 + 7;
+    char *password = (char*)malloc(a * sizeof(char));
+    char upper[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    char lower[] = "abcdefghijklmnopqrstuvwxyz";
+    char digits[] = "0123456789";
+    int hasU = 0, hasL = 0;
+    for (int i = 0; i < a; i++){
+        int choice = rand() % 3;  // Choose character category
+        switch (choice) {
+            case 0:
+                password[i] = lower[rand() % strlen(lower)];
+                hasL = 1;
+                break;
+            case 1:
+                password[i] = upper[rand() % strlen(upper)];
+                hasU = 1;
+                break;
+            case 2:
+                password[i] = digits[rand() % strlen(digits)];
+                break;
+        }
+    }
+    int x = rand() % a;
+    int y = rand() % a;
+    if (x == y){
+        x--;
+    }
+    if (hasL == 0){
+        password[x] = lower[rand() % strlen(lower)];
+        hasL = 1;
+    }
+    if (hasU == 0){
+        password[y] = upper[rand() % strlen(upper)];
+        hasU = 1;
+    }
+    password[a] = '\0';
+    return password;
+}
 int isValidEmail(const char *email) {
     const char *pattern = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
     regex_t regex;
@@ -689,5 +745,274 @@ int isValidEmail(const char *email) {
         return 0;  // Invalid email
     }
 }
+int CHAR_DESIGN(int height, int width){
+    clear();
+    refresh();
+    WINDOW *ch_des = newwin(25, 60, (height - 25) / 2, (width - 60) / 2);
+    char *colors[] = {"RED", "BLUE", "GREEN", "YELLOW", "WHITE", "CHARACTER:"};
+    int num = sizeof(colors) / sizeof(colors[0]);
+    int selected = 0;
+    int key;
 
+    // Initialize color pairs
+    start_color();
+    init_pair(1, COLOR_WHITE, COLOR_RED);
+    init_pair(2, COLOR_WHITE, COLOR_BLUE);
+    init_pair(3, COLOR_WHITE, COLOR_GREEN);
+    init_pair(4, COLOR_WHITE, COLOR_YELLOW);
+    init_pair(5, COLOR_BLACK, COLOR_WHITE);
+    init_pair(6, COLOR_WHITE, COLOR_BLACK);
 
+    box(ch_des, 0, 0);
+    char character;
+    while (1) {
+        mvwprintw(ch_des, 1, 2, "CHARACTER DESIGN");
+        
+        // Print colors horizontally
+        for (int i = 0; i < num; i++) {
+            if (i == selected) {
+                wattron(ch_des, COLOR_PAIR(i + 1) | A_UNDERLINE); // Bold and color for selected
+            } else {
+                wattron(ch_des, COLOR_PAIR(i + 1));          // Just color for others
+            }
+            mvwprintw(ch_des, 10, 2 + i * 8, "%s", colors[i]); // Horizontal arrangement
+            wattroff(ch_des, COLOR_PAIR(i + 1) | A_UNDERLINE);        // Turn off attributes
+        }
+        mvwprintw(ch_des, 21, 2, "PRESS ESC TO EXIT");
+        wrefresh(ch_des);
+        key = getch();
+        switch (key) {
+            case KEY_LEFT:
+                selected--;
+                if (selected < 0) {
+                    selected = num - 1; // Wrap around
+                }
+                break;
+            case KEY_RIGHT:
+                selected++;
+                if (selected >= num) {
+                    selected = 0; // Wrap around
+                }
+                break;
+            case '\n': // ENTER key            
+                if (selected == 5){
+                    echo();
+                    while (1){
+                        mvwprintw(ch_des, 10, 53, "   ");
+                        wmove(ch_des, 10, 53);
+                        curs_set(1);
+                        character = wgetch(ch_des);
+                        mvwprintw(ch_des, 12, 35, "CHARACTER CHOSEN: %c  ", character);
+                        wrefresh(ch_des);
+                        break;
+                    }
+                    noecho();
+                    curs_set(0);
+                }
+                break;
+            case 27: // ESC key
+                werase(ch_des); // Erase window contents
+                wrefresh(ch_des); // Refresh to reflect changes
+                delwin(ch_des);   // Delete the window
+                clear();          // Clear the main screen
+                refresh(); 
+                return 0;
+                break;
+        }
+    }
+}
+int start_menu(int height, int width, Player players[]){
+    clear();
+    refresh();
+    char *options[] = {" PLAY AS A GUEST ", "    NEW PLAYER    ", "      LOGIN      ", "BACK TO MAIN MENU"};
+    int num = sizeof(options) / sizeof(options[0]);
+    int selected = 0;
+    int key;
+    WINDOW *start_menu = newwin(30, 80, (height - 30) / 2, (width - 80) / 2);
+    while (1){
+        wrefresh(start_menu);
+        box(start_menu, 0, 0);
+        for (int i = 0; i < num; i++) {
+            if (i == selected) {
+                wattron(start_menu, A_REVERSE);
+                mvwprintw(start_menu, 4 + 7 * i, 31, "%s", options[i]);
+                wattroff(start_menu, A_REVERSE);
+            } else {
+                mvwprintw(start_menu, 4 + 7 * i, 31, "%s", options[i]);
+            }
+        }
+        wrefresh(start_menu);
+        key = getch();
+        switch (key) {
+            case KEY_UP:
+                selected--;
+                if (selected < 0) selected = num - 1;
+                break;
+            case KEY_DOWN:
+                selected++;
+                if (selected >= num) selected = 0;
+                break;
+            case '\n': 
+                if (selected == 0){ //! FILL!!!!
+
+                }
+                else if (selected == 1){
+                    new_player(height, width, players);
+                    continue;
+                    // wrefresh(start_menu);
+                }
+                else if (selected == 2){
+                    login(height, width, players);
+                    continue;
+                }
+                else if (selected == 3){
+                    return 0;
+                    break;
+                }
+        }
+    }
+}
+int login(int height, int width, Player players[]){
+    clear();
+    refresh();
+    FILE *player_data = fopen("SCOREBOARD.txt", "a+");
+    if (!player_data) {
+        mvprintw(height / 2, (width - 20) / 2, "Unable to open scoreboard file!");
+        refresh();
+        getch();
+        return 1;
+    }
+
+    int player_count = 0;
+    while (fscanf(player_data, "%s %s", players[player_count].name, players[player_count].password) == 2) {
+        player_count++;
+        if (player_count >= 100) {
+            break;
+        }
+    }
+    fclose(player_data);
+    char *options[] = {"ENTER THE GAME", "USERNAME:", "PASSWORD:", "BACK"};
+    int num = sizeof(options) / sizeof(options[0]);
+    int selected = 0;
+    int key;
+    char pass[40];
+    char user[40];
+    WINDOW *login_win = newwin(30, 80, (height - 30) / 2, (width - 80) / 2);
+    while (1){
+        wrefresh(login_win);
+        box(login_win, 0, 0);
+        for (int i = 0; i < num; i++) {
+            if (i == selected) {
+                wattron(login_win, A_REVERSE);
+                mvwprintw(login_win, 3 + 7 * i, 12, "%s", options[i]);
+                wattroff(login_win, A_REVERSE);
+            } else {
+                mvwprintw(login_win, 3 + 7 * i, 12, "%s", options[i]);
+            }
+        }
+        wrefresh(login_win);
+        key = getch();
+        int i;
+        switch (key) {
+            case KEY_UP:
+                selected--;
+                if (selected < 0) selected = num - 1;
+                break;
+            case KEY_DOWN:
+                selected++;
+                if (selected >= num) selected = 0;
+                break;
+            case '\n':
+                if (selected == 1){
+                    mvwprintw(login_win, 9, 22, "                     ");
+                    curs_set(1);
+                    echo();
+                    wmove(login_win, 9, 22);
+                    wrefresh(login_win);
+                    while (1) {
+                        echo();
+                        wgetnstr(login_win, user, sizeof(user) - 1);
+                        int username_exists = 0;
+                        for (i = 0; i < 15; i++) { //!player count;;;;;
+                            if (strcmp(players[i].name, user) == 0) {
+                                username_exists = 1;
+                                break;
+                            }
+                        }
+                        if (username_exists == 0){
+                            mvwprintw(login_win, 11, 22, "USERNAME NOT FOUND");
+                            mvwprintw(login_win, 9, 22, "                     ");
+                            wrefresh(login_win);
+                            wmove(login_win, 9, 22);
+                            noecho();
+                            continue;
+                        }
+                        else {
+                            mvwprintw(login_win, 11, 22, "                             ");
+                            wrefresh(login_win);
+                            noecho();
+                            wmove(login_win, 9, 22);
+                            wrefresh(login_win);
+                        }
+                        curs_set(0);
+                        break;
+                    }            
+                }
+                else if (selected == 2){
+                    mvwprintw(login_win, 16, 22, "                     ");
+                    curs_set(1);
+                    echo();
+                    wmove(login_win, 16, 22);
+                    wrefresh(login_win);
+                    while (1) {
+                        echo();
+                        wgetnstr(login_win, pass, sizeof(pass) - 1);
+                        int password_match = 0;
+                        if (strcmp(pass, players[i].password)){
+                            mvwprintw(login_win, 20, 22, "PASSWORD IS WRONG! TRY AGAING");
+                            mvwprintw(login_win, 16, 22, "                     ");
+                            wrefresh(login_win);
+                            wmove(login_win, 16, 22);
+                            noecho();
+                            curs_set(0);
+                            break;
+                        }
+                        else {
+                            mvwprintw(login_win, 11, 22, "                             ");
+                            wrefresh(login_win);
+                            noecho();
+                            wmove(login_win, 9, 22);
+                            wrefresh(login_win);
+                        }
+                        curs_set(0);
+                        break;
+                    }
+                }
+                else if (selected == 3){
+                    return 0;
+                    break;
+                }
+        }
+    }
+}
+int load_players(Player players[], const char *filename) {
+    FILE *file = fopen("SCOREBOARD.txt", "r"); // Open the file in read mode
+    if (!file) {
+        printf("Error: Could not open file %s.\n", filename);
+        return 0; // Return 0 if the file can't be opened
+    }
+
+    int count = 0; // Counter to track the number of players loaded
+    while (count < 20 && fscanf(file, "%s %s %s %d %d %c", 
+            players[count].name, 
+            players[count].password, 
+            players[count].email, 
+            &players[count].score, 
+            &players[count].color, 
+            &players[count].character) == 6) {
+        count++; // Increment the count for each player
+    }
+
+    fclose(file); // Close the file
+    return count; // Return the number of players loaded
+}
