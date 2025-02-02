@@ -45,18 +45,7 @@ typedef struct Food{
     int is_there;
     int roomesh;
     int color;
-    // FoodAbility ability;
 } Food;
-// typedef enum {
-//     REGULAR_FOOD,
-//     HIGH_QUALITY_FOOD,
-//     MAGICAL_FOOD,
-//     ROTTEN_FOOD
-// } FoodType;
-// typedef union {
-//     int attackBoost;    // For high-quality food
-//     int speedBoost;     // For magical food
-// } FoodAbility;
 
 
 typedef struct Weapon{
