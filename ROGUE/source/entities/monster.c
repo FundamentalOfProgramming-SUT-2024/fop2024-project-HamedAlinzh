@@ -219,6 +219,18 @@ Monster* findmonst(Position* pos, Monster** monsters){
         if (pos->y == monsters[i]->pos->y && pos->x == monsters[i]->pos->x){
             return monsters[i];
         }
+        else if (pos->y + 1 == monsters[i]->pos->y && pos->x == monsters[i]->pos->x){
+            return monsters[i];
+        }
+        else if (pos->y - 1 == monsters[i]->pos->y && pos->x == monsters[i]->pos->x){
+            return monsters[i];
+        }
+        else if (pos->y == monsters[i]->pos->y && pos->x - 1 == monsters[i]->pos->x){
+            return monsters[i];
+        }
+        else if (pos->y == monsters[i]->pos->y && pos->x + 1 == monsters[i]->pos->x){
+            return monsters[i];
+        }
     }
     return NULL;
 }

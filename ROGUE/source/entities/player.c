@@ -4,6 +4,7 @@ playerG *playersetup(playerG *newplayer){
     // newplayer = (playerG*)malloc(sizeof(playerG));
     newplayer->pos = malloc(sizeof(Position));
     newplayer->selected_weapon = malloc(sizeof(Weapon));
+    newplayer->selected_weapon->isthrowable = 0;
     for (int i = 0; i < 5; i++){
         newplayer->food[i] = NULL;
     }
@@ -11,6 +12,7 @@ playerG *playersetup(playerG *newplayer){
     newplayer->weapons[0] = malloc(sizeof(Weapon));
     newplayer->weapons[0]->damage = 5;
     newplayer->weapons[0]->type = 1;
+    newplayer->weapons[0]->isthrowable = 0;
     newplayer->gold = 0;
     newplayer->xp = 0;
     newplayer->maxhealth = 25;
@@ -76,8 +78,8 @@ Position* user_input(int ch, Level* level){
             break;
         case 'f':
         case 'F':
-            int x = newPosition->x;
-            int y = newPosition->y;            
+            int x = user->pos->x;
+            int y = user->pos->y;            
             Position *pos = malloc(sizeof(Position));
             char chd = getch();
             if (chd == 'w' || chd == 'a' || chd == 's' || chd == 'd')
@@ -102,22 +104,29 @@ Position* user_input(int ch, Level* level){
             break;
         case 'q':
         case 'Q':
-            int direction;
-            direction = getch();
-            switch (direction){
-                case KEY_UP:
-                    throwweapon(level->user, throwfindmonster(level->user, level->monsters, 0), level->user->selected_weapon, 0);
+            if (level->user->selected_weapon->isthrowable){
+                int xw = user->pos->x;
+                int yw = user->pos->y;   
+                int ismonster = 0;         
+                Position *posi = malloc(sizeof(Position));
+                char chl = getch();
+                if (chl != 'w' && chl != 'a' && chl != 's' && chl != 'd'){
                     break;
-                // case KEY_RIGHT:
-                //     throwweapon(level->user, level->monsters, level->user->selected_weapon, 1);
-                //     break;
-                // case KEY_DOWN:
-                //     throwweapon(level->user, level->monsters, level->user->selected_weapon, 2);
-                //     break;
-                // case KEY_LEFT:
-                //     throwweapon(level->user, level->monsters, level->user->selected_weapon, 3);
-                //     break;
+                }
+                if (chl == 'w' || chl == 'a' || chl == 's' || chl == 'd' && chl != 'q'){
+                    movementthrow(posi, xw ,yw, chl, level->user->selected_weapon->range, &ismonster);
+                }
+                if (ismonster){
+                    combat(level->user, findmonst(posi, level->monsters), 2);
+                    level->user->selected_weapon = level->user->weapons[0];
+                    break;
+                }
+                level->user->selected_weapon->pos->y = posi->y;
+                level->user->selected_weapon->pos->x = posi->x;
+                level->user->selected_weapon->is_there = 1;
+                level->user->selected_weapon = level->user->weapons[0];
             }
+            
             break;
         case 'm':
         case 'M':
@@ -143,7 +152,7 @@ void Printplayer(playerG *player){
     move(player->pos->y, player->pos->x);
 }
 
-int checkposition(Position *newposition, Level *level, Game *game, playerG *player) {
+int checkposition(Position *newposition, Level *level, Game *game, playerG *player, char charrr) {
     cchar_t wc;
     playerG* user;
     user = level->user;
@@ -166,7 +175,7 @@ int checkposition(Position *newposition, Level *level, Game *game, playerG *play
                             user->health += 1;
                         }
                 }
-                level->countshaf = 0;
+                level->countshaf = 1;
             }
             
             if (level->countHfood % 50 == 2){
@@ -289,6 +298,36 @@ int checkposition(Position *newposition, Level *level, Game *game, playerG *play
             game->levels[game->clevel]->istrap = 0;
             break;
         case L'\U00002126':
+            curs_set(0);
+            mvprintw(48, 110, "Enter Treasure Room Password: ");
+            refresh();
+
+            char pass_input[20] = {0};
+            int pass_idx = 0;
+            int chpas;
+            while ((chpas = getch()) != '\n' && chpas != '\r' && pass_idx < 19) {
+                if (isdigit(chpas)) {
+                    pass_input[pass_idx++] = chpas;
+                    addch(chpas);
+                    refresh();
+                } else if (chpas == KEY_BACKSPACE || chpas == 127) {
+                    if (pass_idx > 0) {
+                        pass_idx--;
+                        refresh();
+                    }
+                }
+            }
+            pass_input[pass_idx] = '\0';
+
+            curs_set(1);
+            int entered_pass = atoi(pass_input);
+            if (entered_pass != game->levels[game->clevel]->password) {
+                mvprintw(47, 110, "ACCESS DENIED!");
+                refresh();
+                getch();
+                break;
+            }
+            curs_set(1);
             start_music("Apex_Legends_Main_Theme.mp3");
             treasureroom(game);
             int cht = 'w';
@@ -298,6 +337,8 @@ int checkposition(Position *newposition, Level *level, Game *game, playerG *play
             int b = game->levels[game->clevel]->treasure_room->gold_num + game->levels[game->clevel]->treasure_room->taloysia_num;
             int *y = &b;
             clear();
+
+            
             while(*y > 0){
                 gamestats(game->levels[game->clevel]);
                 PrintBroom(game->levels[game->clevel]->treasure_room);
@@ -314,6 +355,7 @@ int checkposition(Position *newposition, Level *level, Game *game, playerG *play
                 
                 checkpositionBR(positionP, game->levels[game->clevel], game, player, x, y, x);
             }
+
             stop_music("Apex_Legends_Main_Theme.mp3");
             start_music("01. Main Menu.mp3");
             return 4;
@@ -327,7 +369,7 @@ int checkposition(Position *newposition, Level *level, Game *game, playerG *play
             int d = 3;
             int *z = &d;
             clear();
-            while(*z > 0){
+            while(*z > 0 && chX != 27){
                 gamestats(game->levels[game->clevel]);
                 PrintBroom(game->levels[game->clevel]->potion_room);
                 PrintPotionT(game->levels[game->clevel]->potion_room);
@@ -388,7 +430,29 @@ int checkposition(Position *newposition, Level *level, Game *game, playerG *play
                 mvprintw(48, 110, "                                       ");
             }
             break;
+        case '=':
+            Position *pes = malloc(sizeof(Position));
+            int yy = player->pos->y;
+            int xx = player->pos->x;
+            Printlevelm(level);
+            int isthere = check_barriers_along_path(pes, newposition->x, newposition->y, charrr);
+
+            if (isthere  == 1){
+                int n = get_room_for_position(pes, level) ;
+                level->rooms[n]->is_there = 1;
+            }
             break;
+        case '&':
+            playermove(newposition, user);
+            int randompass = rand() % 9000 + 1000;
+            level->password = randompass;
+            level->key->is_there = 0;
+            attron(COLOR_PAIR(17));
+            mvprintw(47, 110, "PASSWORD TO THE TREASURE ROOM IS %d", level->password);
+            mvprintw(48, 110, "BE CAREFUL! YOU WILL SEE THE PASSWORD ONLY ONCE!");
+            attroff(COLOR_PAIR(17));
+            getch();
+
         default:
             break;
     }
@@ -397,6 +461,15 @@ int checkposition(Position *newposition, Level *level, Game *game, playerG *play
 bool is_traversable(char tile) {
     return (tile == '#' || tile == '.' || tile == '+');
 }
+
+bool is_traversablethrow(char tile) {
+    return (tile == '.');
+}
+
+bool is_monster(char tile) {
+    return (tile == 'D' || tile == 'F' || tile == 'G' || tile == 'U' || tile == 'S');
+}
+
 
 void fmovement(Position *pos, int x, int y, char dir) {
     pos->x = x;
@@ -409,7 +482,7 @@ void fmovement(Position *pos, int x, int y, char dir) {
         case 's': dy = 1; break;   // Down
         case 'a': dx = -1; break;  // Left
         case 'd': dx = 1; break;   // Right
-        default: return;           // Invalid direction
+        default: return;
     }
     int last_x = pos->x;
     int last_y = pos->y;
@@ -425,4 +498,74 @@ void fmovement(Position *pos, int x, int y, char dir) {
     }
     pos->x = last_x;
     pos->y = last_y;
+}
+
+void movementthrow(Position *pos, int x, int y, char dir, int range, int* ismonster) {
+    pos->x = x;
+    pos->y = y;
+
+    int dx = 0, dy = 0;
+
+    switch (dir) {
+        case 'w': dy = -1; break;  // Up
+        case 's': dy = 1; break;   // Down
+        case 'a': dx = -1; break;  // Left
+        case 'd': dx = 1; break;   // Right
+        default: return;
+    }
+    int last_x = pos->x;
+    int last_y = pos->y;
+    int count = range;
+    while (count--) {
+        int new_x = pos->x + dx;
+        int new_y = pos->y + dy;
+        char tile = (char)mvwinch(stdscr, new_y, new_x) & A_CHARTEXT;
+        if (is_monster(tile)) {
+            *ismonster = 1;
+            return;
+        }
+        if (!is_traversablethrow(tile)) break;
+        last_x = new_x;
+        last_y = new_y;
+        pos->x = new_x;
+        pos->y = new_y;
+    }
+    pos->x = last_x;
+    pos->y = last_y;
+}
+
+int check_barriers_along_path(Position *pos, int x, int y, char dir) {
+    int dx = 0, dy = 0;
+    switch(dir) {
+        case 'a': dx = -1; break;
+        case 'd': dx = 1; break;
+        case 'w': dy = -1; break;
+        case 's': dy = 1; break;
+        default: return 0;
+    }
+
+    int max_y, max_x;
+    getmaxyx(stdscr, max_y, max_x);
+
+    int current_x = x;
+    int current_y = y;
+    int found = 0;
+
+    while (1) {
+        current_x += dx;
+        current_y += dy;
+        if (current_x < 0 || current_x >= max_x || current_y < 0 || current_y >= max_y) {
+            break;
+        }
+        char ch = mvinch(current_y, current_x);
+
+        if (ch == '|' || ch == '-' || ch == '+') {
+            pos->x = current_x;
+            pos->y = current_y;
+            found = 1;
+            break;
+        }
+    }
+
+    return found;
 }

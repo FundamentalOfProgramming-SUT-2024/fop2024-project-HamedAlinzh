@@ -21,23 +21,23 @@ Weapon *selectweapon(int i){
     switch (weapon)
     {
     case 0:   //Dagger 
-        return createweapon(dagger, 12, 5, 0, 20, 2, i);
+        return createweapon(dagger, 12, 5, 0, 20, 2, i, 1);
         break;
     case 1:   //Magic staff
-        return createweapon(staff, 15, 5, 0, 20, 3, i);
+        return createweapon(staff, 15, 10, 0, 20, 3, i, 1);
         break;
     case 2:   //Arrow
-        return createweapon(arrow, 5, 5, 0, 20, 4, i);
+        return createweapon(arrow, 5, 5, 0, 20, 4, i, 1);
         break;
     case 3:   //Sword
-        return createweapon(sword, 10, 5, 0, 20, 5, i);
+        return createweapon(sword, 10, 0, 0, 20, 5, i, 0);
         break; 
     default:
         break;
     }
 }
 
-Weapon *createweapon(wchar_t symbol[], int damage, int board, int ability, int durability, int type, int roomesh){
+Weapon *createweapon(wchar_t symbol[], int damage, int range, int ability, int durability, int type, int roomesh, int isthrowable){
     Weapon *weapon = malloc(sizeof(Weapon));
     wcsncpy(weapon->name, symbol, 10);
     weapon->damage = damage;
@@ -46,6 +46,8 @@ Weapon *createweapon(wchar_t symbol[], int damage, int board, int ability, int d
     weapon->is_there = 1;
     weapon->type = type;
     weapon->roomesh = roomesh;
+    weapon->range = range;
+    weapon->isthrowable = isthrowable;
     return weapon;
 }
 

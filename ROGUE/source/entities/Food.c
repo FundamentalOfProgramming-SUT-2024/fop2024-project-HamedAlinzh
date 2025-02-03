@@ -65,16 +65,6 @@ Food *createfood(char symbol, int recovery, int ability, int type, int roomesh, 
     food->roomesh = roomesh;
     food->is_there = 1;
     food->color = color;
-    // switch (ability)
-    // {
-    // case 1:
-    //     food->ability.attackBoost = 1;
-    //     break;
-    // case 2:
-    //     food->ability.speedBoost = 1;
-    // default:
-    //     break;
-    // }
     return food;
 }
 

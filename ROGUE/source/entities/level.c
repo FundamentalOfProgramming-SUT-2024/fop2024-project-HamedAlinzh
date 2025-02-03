@@ -66,6 +66,7 @@ Level *createnewlevel(int level, Level *newlevel, playerG *player, Game *game){
     newlevel->trap = malloc(sizeof(Position));
     newlevel->Tdoor = malloc(sizeof(Position));
     newlevel->Pdoor = malloc(sizeof(Position));
+    newlevel->key = malloc(sizeof(Position));
     newlevel->level = level;
     newlevel->roomnum = 6;
     newlevel->rooms = roomsetup(newlevel);
@@ -106,6 +107,13 @@ Level *createnewlevel(int level, Level *newlevel, playerG *player, Game *game){
     newlevel->Pdoor->y = rand() % (newlevel->rooms[q]->height - 4) + newlevel->rooms[q]->pos.y + 2;
     newlevel->Pdoor->x = rand() % (newlevel->rooms[q]->width - 4) + newlevel->rooms[q]->pos.x + 2;
     newlevel->Pdoor->roomesh = q;
+    if (level == 3){
+        int w = rand() % 6;
+        newlevel->key->y = rand() % (newlevel->rooms[w]->height - 4) + newlevel->rooms[w]->pos.y + 2;
+        newlevel->key->x = rand() % (newlevel->rooms[w]->width - 4) + newlevel->rooms[w]->pos.x + 2;
+        newlevel->key->roomesh = w;
+        newlevel->key->is_there = 1;
+    }
     return newlevel;
 }
 
@@ -211,8 +219,12 @@ void Printlevel(Level *level){
     }
     
     wchar_t Tdoor[] = {L'\U00002126', L'\0'};
-    if (level->rooms[level->stair->roomesh]->is_there == 1 && level->level != 3)
-        mvprintw(level->stair->y, level->stair->x, ">");
+    if (level->level > 0 && (level->istrap == 1) && (level->rooms[level->trap->roomesh]->is_there == 1)){
+        mvprintw(level->trap->y, level->trap->x, "^");
+    }
+    if (level->level == 3 && (level->key->is_there == 1) && (level->rooms[level->key->roomesh]->is_there == 1)){
+        mvprintw(level->key->y, level->key->x, "&");
+    }
     if (level->level == 3 && level->rooms[level->Tdoor->roomesh]->is_there == 1)    //!!!!!
         mvaddwstr(level->Tdoor->y, level->Tdoor->x, Tdoor);
     if (level->level > 0){
@@ -223,9 +235,8 @@ void Printlevel(Level *level){
         if (level->rooms[level->stairP->roomesh]->is_there == 1)
             mvprintw(level->stairP->y, level->stairP->x, "<");
     }
-    if (level->level > 0 && (level->istrap == 1) && (level->rooms[level->trap->roomesh]->is_there == 1)){
-        mvprintw(level->trap->y, level->trap->x, "^");
-    }
+    if (level->rooms[level->stair->roomesh]->is_there == 1 && level->level != 3)
+        mvprintw(level->stair->y, level->stair->x, ">");
     Printplayer(level->user);
     if (level->Hfood->is_there == 1){
         attron(COLOR_PAIR(11));
@@ -276,11 +287,6 @@ void Printlevelm(Level *level){
     for (int i = 0; i < level->potion_num; i++){
         Printpotion(level->potions[i]);
     }
-    if (level->level != 3)
-        mvprintw(level->stair->y, level->stair->x, ">");
-    if (level->level > 0){
-        mvprintw(level->stairP->y, level->stairP->x, "<");
-    }
     if (level->level > 0 && (level->isPdoor == 1)){
         mvprintw(level->Pdoor->y, level->Pdoor->x, "?");
     }
@@ -291,6 +297,13 @@ void Printlevelm(Level *level){
     if (level->level > 0 && level->istrap == 1)
         mvprintw(level->trap->y, level->trap->x, "^");
     Printplayer(level->user);
+    if (level->level != 3)
+        mvprintw(level->stair->y, level->stair->x, ">");
+    if (level->level > 0){
+        mvprintw(level->stairP->y, level->stairP->x, "<");
+    }
+    move(level->user->pos->y, level->user->pos->x);
+
     if (level->Hfood->is_there == 1){
         attron(COLOR_PAIR(11));
         mvprintw(48, 135, "HIGH QUALITY FOOD ABILITY ENABLED!");

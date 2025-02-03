@@ -52,12 +52,13 @@ typedef struct Weapon{
     Position *pos;
     int damage;
     int durability;
-    int board;
+    int range;
     int ability;
     wchar_t name[10];
     int is_there;
     int type; // 1 for mace ....  5 for sword
     int roomesh;
+    int isthrowable;
 } Weapon;
 
 typedef struct Potion{
@@ -108,7 +109,6 @@ typedef struct playerG{
     int hunger;
     int maxhunger;
     int distance;
-
     char name[50];
     char password[40];
     char email[60];
@@ -121,6 +121,7 @@ typedef struct Game{
     int clevel;
     int dificulty;
     int guest;
+    int password;
     playerG *player;
 } Game;
 
@@ -185,7 +186,9 @@ typedef struct Level
     int is_speed;
     int isPdoor;
     int speedcounter;
+    Position *key;
     Position *Pdoor;
+    int password;
 } Level;
 
 typedef struct Room{
@@ -211,7 +214,7 @@ typedef struct Room{
 int start(Game *game, playerG *players);
 int setupscreen();
 Position* user_input(int ch, Level *level);
-int checkposition(Position *newposition, Level *level,  Game *game, playerG *player);
+int checkposition(Position *newposition, Level *level,  Game *game, playerG *player, char charrr);
 int gamestats(Level *level);
 void display(Game *game);
 void gameover(playerG* player);
@@ -225,6 +228,7 @@ int playermove(Position *newpos, playerG *user);
 void Printplayer(playerG *player);
 void fmovement(Position *pos, int x, int y, char dir);
 bool is_traversable(char tile);
+bool is_traversablethrow(char tile);
 
 // ! Room Functions ! //
 
@@ -238,6 +242,8 @@ Room* createbattleroom(int y, int x, int height, int width);
 int PrintBroom(Room *room);
 int treasureroom(Game *game);
 Room* createtreasureroom(int y, int x, int height, int width);
+int  get_room_for_position(Position *pos, Level *level);
+int check_barriers_along_path(Position *pos, int x, int y, char dir);
 
 // ! Level Functions ! //
 
@@ -250,6 +256,7 @@ void Printlevel(Level *level);
 void Printlevelm(Level *level);
 
 // ! Gold Functions ! //
+
 void PrintgoldT(Room *room);
 int addgoldT(Room *Troom);
 int consume_goldT(Level *level, Gold *gold, int* count);
@@ -321,7 +328,7 @@ int grab_potionT(Level *level, Potion *potion, int* count);
 
 int addweapon(Level *level);
 Weapon *selectweapon(int i);
-Weapon *createweapon(wchar_t symbol[], int damage, int board, int ability, int durability, int type, int roomesh);
+Weapon *createweapon(wchar_t symbol[], int damage, int range, int ability, int durability, int type, int roomesh, int isthrowable);
 void weaponpos(Weapon* weapon, Room* room);
 void Printweapon(Weapon *weapon);
 Weapon *findweapon(Position* pos, Weapon** weapons);
@@ -333,6 +340,7 @@ int throwweapon(playerG* player, Monster* monster, Weapon *weapon, int direction
 Room* createpotionroom(int y, int x, int height, int width);
 int addpotionBR(Room *room);
 Potion* findpotionBR(Position* pos, Potion** potions, int potionnum);
+void movementthrow(Position *pos, int x, int y, char dir, int range, int* ismonster);
 
 
 // ! Menu Functions ! //

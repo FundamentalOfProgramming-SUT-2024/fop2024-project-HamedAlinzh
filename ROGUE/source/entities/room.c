@@ -145,11 +145,11 @@ int Printroom(Room *room) {
             mvprintw(y, x, ".");  // Fill with dots
         }
     }
-    // doors
     for (int i = 0; i < 2; i++){
         if (room->window[i]->is_there)
             mvprintw(room->window[i]->y, room->window[i]->x, "=");
     }
+    // doors
     for (int i = 0; i < 4; i++){
         mvprintw(room->door[i]->y, room->door[i]->x, "+");
     }
@@ -180,6 +180,10 @@ int Printroomvisited(Room *room) {
                 mvprintw(y, x, ".");  // Fill with dots
             }
         }
+        for (int i = 0; i < 2; i++){
+            if (room->window[i]->is_there)
+                mvprintw(room->window[i]->y, room->window[i]->x, "=");
+            }
         // doors
         for (int i = 0; i < 4; i++){
             mvprintw(room->door[i]->y, room->door[i]->x, "+");
@@ -212,3 +216,16 @@ int findroom(Position* pos, Level *level){
     }
     return 7;
 }
+
+int  get_room_for_position(Position *pos, Level *level) {
+    for (int i = 0; i < 6; i++) {
+        if (pos->x >= level->rooms[i]->pos.x &&
+            pos->x < level->rooms[i]->pos.x + level->rooms[i]->width &&
+            pos->y >= level->rooms[i]->pos.y &&
+            pos->y < level->rooms[i]->pos.y + level->rooms[i]->height) {
+            return i;
+        }
+    }
+    return 6;
+}
+

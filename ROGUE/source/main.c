@@ -53,7 +53,7 @@ int start(Game *game, playerG *players){
             }
             counter++;
         }
-        int a = checkposition(newposition, game->levels[game->clevel], game, player);
+        int a = checkposition(newposition, game->levels[game->clevel], game, player, ch);
         move(game->levels[game->clevel]->user->pos->y, game->levels[game->clevel]->user->pos->x);
         if(player->health <= 0){
             clear();
@@ -79,12 +79,8 @@ int start(Game *game, playerG *players){
                     sscanf(buffer, " %s %s %s", username, password, email);
 
                     if (strcmp(username, targetUsername) == 0) {
-                        fseek(file, position - strlen(buffer), SEEK_SET);  // -1 to skip the newline
-
-                        // Overwrite the line with the updated information
+                        fseek(file, position - strlen(buffer), SEEK_SET);
                         fprintf(file, "%s %s %s %d %d\n", username, password, email, gold, xp);
-                        
-                        // Flush the file to ensure the data is written immediately
                         fflush(file);
 
                         found = 1;
@@ -93,11 +89,10 @@ int start(Game *game, playerG *players){
                 }
 
                 if (!found) {
-                    // If the username wasn't found, you could append it at the end
                     fprintf(file, "%s %s %s %d %d\n", targetUsername, "defaultPassword", "defaultEmail", gold, xp);
                 }
 
-                fclose(file); // Close the file
+                fclose(file);
             }
             break;
         }
@@ -110,40 +105,28 @@ int start(Game *game, playerG *players){
             refresh();
             credits();
             if (game->guest == 0){
-                FILE *file = fopen("SCOREBOARD.txt", "r+"); // Open file for reading and writing
+                FILE *file = fopen("SCOREBOARD.txt", "r+");
 
                 if (file == NULL) {
-                    // Handle error opening file
                     printf("Error opening SCOREBOARD.txt\n");
                     break;
                 }
 
                 char username[256], password[256], email[256], buffer[256];
                 char targetUsername[256];
-                strcpy(targetUsername, game->player->name); // Replace with the username you're searching for
+                strcpy(targetUsername, game->player->name);
                 int gold = player->gold;
                 int xp = player->xp;
 
                 long position;
                 int found = 0;
-
-                // Read each line and check if it matches the target username
                 while (fgets(buffer, sizeof(buffer), file)) {
-                    position = ftell(file); // Save the current position of the file pointer
-                    
-                    // Read the line into variables
+                    position = ftell(file);
                     sscanf(buffer, "%s %s %s", username, password, email);
 
                     if (strcmp(username, targetUsername) == 0) {
-                        // If the username matches, we found the line to modify
-
-                        // Move the file pointer back to the beginning of the previous line
-                        fseek(file, position - strlen(buffer) - 1, SEEK_SET);  // -1 to skip the newline
-
-                        // Overwrite the line with the updated information
+                        fseek(file, position - strlen(buffer) - 1, SEEK_SET);
                         fprintf(file, "%s %s %s %d %d", username, password, email, gold, xp);
-                        
-                        // Flush the file to ensure the data is written immediately
                         fflush(file);
 
                         found = 1;
@@ -152,11 +135,10 @@ int start(Game *game, playerG *players){
                 }
 
                 if (!found) {
-                    // If the username wasn't found, you could append it at the end
                     fprintf(file, "%s %s %s %d %d\n", targetUsername, "defaultPassword", "defaultEmail", gold, xp);
                 }
 
-                fclose(file); // Close the file
+                fclose(file);
             }
             break;
         }
@@ -166,8 +148,3 @@ int start(Game *game, playerG *players){
     endwin();
     return 0;
 }
-// int main(){
-//     Game game;
-//     game.clevel = 0;
-//     start(&game);
-// }

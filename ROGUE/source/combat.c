@@ -5,12 +5,12 @@ int combat(playerG* player, Monster* monster, int ord){
     if (ord == 1){
         int a = rand() % 3;
         if (a != 0){
-        monster->health -= player->attack;
-        // attron(COLOR_PAIR(21));
-        mvprintw(48, 95, "YOU DAMAGED THE MONSTER!");
-        move(player->pos->y, player->pos->x);
-        // attroff(COLOR_PAIR(21));
-        // getch();
+            monster->health -= player->attack;
+            // attron(COLOR_PAIR(21));
+            mvprintw(48, 95, "YOU DAMAGED THE MONSTER!");
+            move(player->pos->y, player->pos->x);
+            // attroff(COLOR_PAIR(21));
+            // getch();
         }
         if (monster->health > 0){
             int b = rand() % 2;
@@ -35,6 +35,19 @@ int combat(playerG* player, Monster* monster, int ord){
             return 1;
         }
     }
+
+    else if (ord == 2){
+        monster->health -= player->attack;
+        getch();
+        if (monster->health <= 0) {
+            mvprintw(monster->pos->y, monster->pos->x, ".");
+            player->xp += 1;
+            player->hunger--;
+            return 1;
+        }
+        return 1;
+    }
+
     else {
         player->health -= monster->attack;
         if (player->health > 0){

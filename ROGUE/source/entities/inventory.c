@@ -42,7 +42,7 @@ int inventory(Level *level){
     mvwprintw(inventory_win, 4,  21, "< WEAPON ICON >");
     mvwprintw(inventory_win, 4,  38, "< NUMBER >");
     mvwprintw(inventory_win, 4,  51, "< DAMAGE >");
-    mvwprintw(inventory_win, 4,  64, "< BOARD >");
+    mvwprintw(inventory_win, 4,  64, "< RANGE >");
     wattron(inventory_win, COLOR_PAIR(1) | A_BOLD);
     mvwprintw(inventory_win, 6,  3, "< MELEE WEAPONS >");
     mvwprintw(inventory_win, 17,  3, "< RANGED WEAPONS >");
