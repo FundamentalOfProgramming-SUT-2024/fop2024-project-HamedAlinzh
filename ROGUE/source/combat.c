@@ -89,7 +89,7 @@ int throwweapon(playerG* player, Monster* monster, Weapon *weapon, int direction
 
 
 
-int checkpositionBR(Position *newposition, Level *level, Game *game, playerG *player, int *x, int *y) {
+int checkpositionBR(Position *newposition, Level *level, Game *game, playerG *player, int *x, int *y, int *z) {
     cchar_t wc;
     playerG* user;
     user = level->user;
@@ -143,6 +143,10 @@ int checkpositionBR(Position *newposition, Level *level, Game *game, playerG *pl
         case 'F':
             combatBR(user, findmonstBR(newposition, level->battle_room->monsters, level->battle_room->monsternum), 1, x);
             break;
+        case L'\U00002623':
+        case L'\U0000269B':
+        case L'\U00002622':
+            grab_potionT(level, findpotionBR(newposition, level->potion_room->potions, level->potion_room->potionnum), z);
         default:
             break;
     }

@@ -1,10 +1,10 @@
 #include "rogue.h"
 
-int addmonsters(Level *level){
+int addmonsters(Level *level, Game *game){
     level->monsters = malloc(sizeof(Monster *) * 6);
     level->monsternum = 0;
     for (int x = 0; x < level->roomnum; x++){
-        if ((rand() % 3) > 0){
+        if ((rand() % 3) >= (3 - game->dificulty)){
             level->monsters[level->monsternum] = selectMonster(level->level, x);
             SetStartPos(level->monsters[level->monsternum], level->rooms[x]);
             level->monsternum++;

@@ -85,6 +85,8 @@ typedef struct Player{
     int score;
     int color;
     char character;
+    int gold;
+    int xp;
 } Player;
 
 typedef struct playerG{
@@ -105,7 +107,7 @@ typedef struct playerG{
     int weapons_num;
     int hunger;
     int maxhunger;
-
+    int distance;
 
     char name[50];
     char password[40];
@@ -117,6 +119,8 @@ typedef struct playerG{
 typedef struct Game{
     struct Level *levels[4];
     int clevel;
+    int dificulty;
+    int guest;
     playerG *player;
 } Game;
 
@@ -179,12 +183,16 @@ typedef struct Level
     isthere *Hfood;
     int sabet;
     int is_speed;
+    int isPdoor;
     int speedcounter;
+    Position *Pdoor;
 } Level;
 
 typedef struct Room{
     Monster **monsters;
     int monsternum;
+    Potion **potions;
+    int potionnum;
     Position pos;
     int height;
     int width;
@@ -200,7 +208,7 @@ typedef struct Room{
 
 // ! Desplay Functions ! //
 
-int start(Game *game);
+int start(Game *game, playerG *players);
 int setupscreen();
 Position* user_input(int ch, Level *level);
 int checkposition(Position *newposition, Level *level,  Game *game, playerG *player);
@@ -212,7 +220,7 @@ void credits();
 
 // ! Player Functions ! //
 
-playerG *playersetup();
+playerG *playersetup(playerG *newplayer);
 int playermove(Position *newpos, playerG *user);
 void Printplayer(playerG *player);
 void fmovement(Position *pos, int x, int y, char dir);
@@ -234,8 +242,8 @@ Room* createtreasureroom(int y, int x, int height, int width);
 // ! Level Functions ! //
 
 char ** savelevel();
-Level *createlevel(int level, playerG *user);
-Level *createnewlevel(int level, Level *newlevel, playerG *player);
+Level *createlevel(int level, playerG *user, Game *game);
+Level *createnewlevel(int level, Level *newlevel, playerG *player, Game *game);
 int gotonextlevel(Game *game, playerG *player);
 int gotopreviouslevel(Game *game, playerG *player);
 void Printlevel(Level *level);
@@ -255,13 +263,14 @@ int consume_gold(Level *level, Gold *gold);
 int consume_taloysia(Level *level, Gold *gold);
 
 // ! Monster Functions ! //
-int addmonsters(Level *level);
+
+int addmonsters(Level *level, Game *game);
 Monster *selectMonster(int level, int x);
 Monster *createmonster(char symbol, int health, int attack, int speed, int defence, int pathfinding, int roomesh);
 int addmonsterBR(Room *room);
 int movemonsterBR(Room *room, playerG * user);
 int path5BR(Room *room, Position *posmonst, Position *posplayer);
-int checkpositionBR(Position *newposition, Level *level,  Game *game, playerG *player, int *x, int* y);
+int checkpositionBR(Position *newposition, Level *level, Game *game, playerG *player, int *x, int *y, int *z);
 Monster* findmonstBR(Position* pos, Monster** monsters, int monsternum);
 int combatBR(playerG* player, Monster* monster, int ord, int *x);
 int combat(playerG* player, Monster* monster, int ord);
@@ -304,6 +313,9 @@ Potion* findpotion(Position* pos, Potion** potions);
 int grabpotion(Level *level, Potion *potion);
 int findpotioninven(Potion **potion, int type, int potion_num);
 int potionbag(Level *level);
+int potionroom(Game *game);
+void PrintPotionT(Room *room);
+int grab_potionT(Level *level, Potion *potion, int* count);
 
 // ! Weapon Functions ! //
 
@@ -318,10 +330,14 @@ int inventory(Level *level);
 int findweaponinven(Weapon **weapon, int type, int weapon_num);
 Monster* throwfindmonster(playerG *player,Monster** monsters, int direction);
 int throwweapon(playerG* player, Monster* monster, Weapon *weapon, int direction);
+Room* createpotionroom(int y, int x, int height, int width);
+int addpotionBR(Room *room);
+Potion* findpotionBR(Position* pos, Potion** potions, int potionnum);
 
 
 // ! Menu Functions ! //
-
+int SCORE_BOARDV(int height, int width, Player players[], Game *game);
+int SCORE_BOARDL(int height, int width, Player players[], Game *game);
 int load_players(Player players[], const char *filename, Game* game);
 int comparePlayers(const void *a, const void *b);
 int loading_screen();
@@ -329,6 +345,7 @@ int main_menu(int height, int width, Player player, Game* game);
 int handle_inputs(int height, int width, Player players[], Game *game);
 int OPTIONS(int height, int width, Player players, Game* game);
 int MUSIC_SELECTION(int height, int width);
+int dificulty(int height, int width, Game *game);
 void *play_music_background(void *arg);
 // pthread_t music_thread;
 void start_music(const char *music_file);

@@ -1,5 +1,5 @@
 #include "rogue.h"
-Level *createlevel(int level, playerG *user){
+Level *createlevel(int level, playerG *user, Game *game){
     Level *newlevel;
     newlevel = malloc(sizeof(Level));
     newlevel->stair = malloc(sizeof(Position));
@@ -28,7 +28,7 @@ Level *createlevel(int level, playerG *user){
     newlevel->user->pos->x = newlevel->rooms[0]->pos.x + 2;
     mvprintw(newlevel->user->pos->y, newlevel->user->pos->x, "%c", newlevel->user->symbol);
     move(newlevel->user->pos->y, newlevel->user->pos->x);
-    addmonsters(newlevel);
+    addmonsters(newlevel, game);
     addgold(newlevel);
     addfood(newlevel);
     addweapon(newlevel);
@@ -44,7 +44,7 @@ Level *createlevel(int level, playerG *user){
     return newlevel;
 }
 
-Level *createnewlevel(int level, Level *newlevel, playerG *player){
+Level *createnewlevel(int level, Level *newlevel, playerG *player, Game *game){
     clear();
     for (int i = 0; i < 8; i++) {
         newlevel->pathGrid[i] = malloc(MAX_HEIGHT * sizeof(Pathgrid *));
@@ -65,6 +65,7 @@ Level *createnewlevel(int level, Level *newlevel, playerG *player){
     newlevel->stairP = malloc(sizeof(Position));
     newlevel->trap = malloc(sizeof(Position));
     newlevel->Tdoor = malloc(sizeof(Position));
+    newlevel->Pdoor = malloc(sizeof(Position));
     newlevel->level = level;
     newlevel->roomnum = 6;
     newlevel->rooms = roomsetup(newlevel);
@@ -74,7 +75,7 @@ Level *createnewlevel(int level, Level *newlevel, playerG *player){
     newlevel->user->pos->x = newlevel->rooms[0]->pos.x + 2;
     mvprintw(newlevel->user->pos->y, newlevel->user->pos->x, "%c", newlevel->user->symbol);
     move(newlevel->user->pos->y, newlevel->user->pos->x);
-    addmonsters(newlevel);
+    addmonsters(newlevel, game);
     addgold(newlevel);
     addfood(newlevel);
     addweapon(newlevel);
@@ -95,10 +96,16 @@ Level *createnewlevel(int level, Level *newlevel, playerG *player){
     newlevel->trap->x = rand() % (newlevel->rooms[k]->width - 4) + newlevel->rooms[k]->pos.x + 2;
     newlevel->trap->roomesh = k;
     newlevel->istrap = 1;
+    newlevel->isPdoor = 1;
     int v = rand() % 2 + 4;
     newlevel->Tdoor->y = rand() % (newlevel->rooms[v]->height - 4) + newlevel->rooms[v]->pos.y + 2;
     newlevel->Tdoor->x = rand() % (newlevel->rooms[v]->width - 4) + newlevel->rooms[v]->pos.x + 2;
     newlevel->Tdoor->roomesh = v;
+
+    int q = rand() % 6;
+    newlevel->Pdoor->y = rand() % (newlevel->rooms[q]->height - 4) + newlevel->rooms[q]->pos.y + 2;
+    newlevel->Pdoor->x = rand() % (newlevel->rooms[q]->width - 4) + newlevel->rooms[q]->pos.x + 2;
+    newlevel->Pdoor->roomesh = q;
     return newlevel;
 }
 
@@ -208,6 +215,10 @@ void Printlevel(Level *level){
     if (level->level == 3 && level->rooms[level->Tdoor->roomesh]->is_there == 1)    //!!!!!
         mvaddwstr(level->Tdoor->y, level->Tdoor->x, Tdoor);
     if (level->level > 0){
+        if (level->rooms[level->Pdoor->roomesh]->is_there == 1 && (level->isPdoor == 1))
+            mvprintw(level->Pdoor->y, level->Pdoor->x, "?");
+    }
+    if (level->level > 0){
         if (level->rooms[level->stairP->roomesh]->is_there == 1)
             mvprintw(level->stairP->y, level->stairP->x, "<");
     }
@@ -269,6 +280,9 @@ void Printlevelm(Level *level){
     if (level->level > 0){
         mvprintw(level->stairP->y, level->stairP->x, "<");
     }
+    if (level->level > 0 && (level->isPdoor == 1)){
+        mvprintw(level->Pdoor->y, level->Pdoor->x, "?");
+    }
     wchar_t Tdoor[] = {L'\U00002126', L'\0'};
     if (level->level == 3){
         mvaddwstr(level->Tdoor->y, level->Tdoor->x, Tdoor);
@@ -301,7 +315,7 @@ int gotonextlevel(Game *game, playerG *player){
     }
     else {
         game->clevel++;
-        game->levels[game->clevel] = createnewlevel(game->clevel, game->levels[game->clevel], player);
+        game->levels[game->clevel] = createnewlevel(game->clevel, game->levels[game->clevel], player, game);
     }
 }
 

@@ -67,7 +67,8 @@ int start_menu(int height, int width, Player players[], Game *game){
             case '\n': 
                 if (selected == 0){ //! FILL!!!!
                     curs_set(1);
-                    start(game);
+                    game->guest = 1;
+                    start(game, game->player);
                     clear();
                     curs_set(0);
                     refresh();
@@ -88,6 +89,129 @@ int start_menu(int height, int width, Player players[], Game *game){
         }
     }
 }
+// int login(int height, int width, Player players[], Game *game) {
+//     clear();
+//     refresh();
+//     FILE *player_data = fopen("SCOREBOARD.txt", "r"); // Open file in read mode
+//     if (!player_data) {
+//         mvprintw(height / 2, (width - 20) / 2, "Unable to open scoreboard file!");
+//         refresh();
+//         getch();
+//         return 1;
+//     }
+
+//     int player_count = 0;
+//     while (fscanf(player_data, " %s %s", players[player_count].name, players[player_count].password) == 2) {
+//         player_count++;
+//         if (player_count >= 100) {
+//             break;
+//         }
+//     }
+//     fclose(player_data);
+
+//     char *options[] = {"ENTER THE GAME", "USERNAME:", "PASSWORD:", "BACK"};
+//     int num = sizeof(options) / sizeof(options[0]);
+//     int selected = 0;
+//     int key;
+//     char pass[40] = {0};
+//     char user[40] = {0};
+//     int user_index = -1;
+//     int canpass = 0;
+
+//     WINDOW *login_win = newwin(30, 80, (height - 30) / 2, (width - 80) / 2);
+//     while (1) {
+//         wrefresh(login_win);
+//         box(login_win, 0, 0);
+//         for (int i = 0; i < num; i++) {
+//             if (i == selected) {
+//                 wattron(login_win, A_REVERSE);
+//                 mvwprintw(login_win, 3 + 7 * i, 12, "%s", options[i]);
+//                 wattroff(login_win, A_REVERSE);
+//             } else {
+//                 mvwprintw(login_win, 3 + 7 * i, 12, "%s", options[i]);
+//             }
+//         }
+//         wrefresh(login_win);
+//         key = getch();
+//         switch (key) {
+//             case KEY_UP:
+//                 selected--;
+//                 if (selected < 0) selected = num - 1;
+//                 break;
+//             case KEY_DOWN:
+//                 selected++;
+//                 if (selected >= num) selected = 0;
+//                 break;
+//             case '\n':
+//                 if (selected == 1) {
+//                     mvwprintw(login_win, 10, 22, "                     ");
+//                     curs_set(1);
+//                     echo();
+//                     wmove(login_win, 10, 22);
+//                     wrefresh(login_win);
+//                     wgetnstr(login_win, user, sizeof(user) - 1);
+
+//                     user_index = -1;
+//                     for (int i = 0; i < player_count; i++) {
+//                         if (strcmp(players[i].name, user) == 0) {
+//                             user_index = i;
+//                             break;
+//                         }
+//                     }
+
+//                     if (user_index == -1) {
+//                         mvwprintw(login_win, 12, 22, "USERNAME NOT FOUND");
+//                         mvwprintw(login_win, 10, 22, "                     ");
+//                         wrefresh(login_win);
+//                     } else {
+//                         mvwprintw(login_win, 12, 22, "                             ");
+//                         wrefresh(login_win);
+//                         strcpy(game->player->name, user);
+//                     }
+//                     curs_set(0);
+//                     noecho();
+//                 } else if (selected == 2) {
+//                     if (user_index == -1) {
+//                         mvwprintw(login_win, 20, 22, "ENTER A VALID USERNAME FIRST!");
+//                         wrefresh(login_win);
+//                         continue;
+//                     }
+
+//                     mvwprintw(login_win, 17, 22, "                     ");
+//                     curs_set(1);
+//                     echo();
+//                     wmove(login_win, 17, 22);
+//                     wrefresh(login_win);
+//                     wgetnstr(login_win, pass, sizeof(pass) - 1);
+
+//                     if (strcmp(players[user_index].password, pass) == 0) {
+//                         mvwprintw(login_win, 20, 22, "                                     ");
+//                         wrefresh(login_win);
+//                         strcpy(game->player->password, pass);
+//                         canpass = 1;
+//                     } else {
+//                         mvwprintw(login_win, 20, 22, "PASSWORD IS WRONG! TRY AGAIN");
+//                         wrefresh(login_win);
+//                     }
+//                     curs_set(0);
+//                     noecho();
+//                 } else if (selected == 3) {
+//                     delwin(login_win);
+//                     return 0; // Back to previous menu
+//                 } else if (selected == 0){
+//                     if (canpass){
+//                         curs_set(1);
+//                         start(game, game->player);
+//                         clear();
+//                         curs_set(0);
+//                         refresh();
+//                     }
+//                 }
+//                 break;
+//         }
+//     }
+// }
+
 int login(int height, int width, Player players[], Game *game) {
     clear();
     refresh();
@@ -100,7 +224,12 @@ int login(int height, int width, Player players[], Game *game) {
     }
 
     int player_count = 0;
-    while (fscanf(player_data, "%s %s", players[player_count].name, players[player_count].password) == 2) {
+    while (fscanf(player_data, " %s %s %s %d %d", 
+                  players[player_count].name, 
+                  players[player_count].password, 
+                  players[player_count].email, 
+                  &players[player_count].score, 
+                  &players[player_count].xp) == 5) {
         player_count++;
         if (player_count >= 100) {
             break;
@@ -108,15 +237,18 @@ int login(int height, int width, Player players[], Game *game) {
     }
     fclose(player_data);
 
+    // Now the login code works as expected.
     char *options[] = {"ENTER THE GAME", "USERNAME:", "PASSWORD:", "BACK"};
     int num = sizeof(options) / sizeof(options[0]);
     int selected = 0;
     int key;
     char pass[40] = {0};
     char user[40] = {0};
-    int user_index = -1; // To track the index of the matching username
+    int user_index = -1;
+    int canpass = 0;
 
     WINDOW *login_win = newwin(30, 80, (height - 30) / 2, (width - 80) / 2);
+    mvwprintw(login_win, 28, 40, "PRESS F IF YOU FORGET YOUR PASSWORD!");
     while (1) {
         wrefresh(login_win);
         box(login_win, 0, 0);
@@ -141,7 +273,7 @@ int login(int height, int width, Player players[], Game *game) {
                 if (selected >= num) selected = 0;
                 break;
             case '\n':
-                if (selected == 1) { // Handle Username Input
+                if (selected == 1) {
                     mvwprintw(login_win, 10, 22, "                     ");
                     curs_set(1);
                     echo();
@@ -149,10 +281,10 @@ int login(int height, int width, Player players[], Game *game) {
                     wrefresh(login_win);
                     wgetnstr(login_win, user, sizeof(user) - 1);
 
-                    user_index = -1; // Reset the index
+                    user_index = -1;
                     for (int i = 0; i < player_count; i++) {
                         if (strcmp(players[i].name, user) == 0) {
-                            user_index = i; // Store the index of the matching username
+                            user_index = i;
                             break;
                         }
                     }
@@ -164,11 +296,13 @@ int login(int height, int width, Player players[], Game *game) {
                     } else {
                         mvwprintw(login_win, 12, 22, "                             ");
                         wrefresh(login_win);
+                        strcpy(game->player->name, user);
+                        mvwprintw(login_win, 26, 40, "                                    ");
                     }
                     curs_set(0);
                     noecho();
-                } else if (selected == 2) { // Handle Password Input
-                    if (user_index == -1) { // No username entered/found yet
+                } else if (selected == 2) {
+                    if (user_index == -1) {
                         mvwprintw(login_win, 20, 22, "ENTER A VALID USERNAME FIRST!");
                         wrefresh(login_win);
                         continue;
@@ -184,6 +318,8 @@ int login(int height, int width, Player players[], Game *game) {
                     if (strcmp(players[user_index].password, pass) == 0) {
                         mvwprintw(login_win, 20, 22, "                                     ");
                         wrefresh(login_win);
+                        strcpy(game->player->password, pass);
+                        canpass = 1;
                     } else {
                         mvwprintw(login_win, 20, 22, "PASSWORD IS WRONG! TRY AGAIN");
                         wrefresh(login_win);
@@ -192,21 +328,37 @@ int login(int height, int width, Player players[], Game *game) {
                     noecho();
                 } else if (selected == 3) {
                     delwin(login_win);
-                    return 0; // Back to previous menu
+                    return 0;
+                } else if (selected == 0){
+                    if (canpass){
+                        curs_set(1);
+                        game->guest = 0;
+                        start(game, game->player);
+                        clear();
+                        curs_set(0);
+                        refresh();
+                    }
                 }
                 break;
+            case 'f':
+            case 'F':
+                if (user_index != -1){
+                    mvwprintw(login_win, 26, 40, "YOUR PASSWORD IS: %s", players[user_index].password);
+                }
+
         }
     }
 }
 
+
 int load_players(Player players[], const char *filename, Game* game) {
-    FILE *file = fopen("SCOREBOARD.txt", "r"); // Open the file in read mode
+    FILE *file = fopen("SCOREBOARD.txt", "r");
     if (!file) {
         printf("Error: Could not open file %s.\n", filename);
-        return 0; // Return 0 if the file can't be opened
+        return 0; 
     }
 
-    int count = 0; // Counter to track the number of players loaded
+    int count = 0;
     while (count < 20 && fscanf(file, "%s %s %s %d %d %c", 
             players[count].name, 
             players[count].password, 
@@ -214,11 +366,11 @@ int load_players(Player players[], const char *filename, Game* game) {
             &players[count].score, 
             &players[count].color, 
             &players[count].character) == 6) {
-        count++; // Increment the count for each player
+        count++;
     }
 
-    fclose(file); // Close the file
-    return count; // Return the number of players loaded
+    fclose(file);
+    return count;
 }
 
 int new_player(int height, int width, Player players[], Game *game) {
@@ -376,7 +528,7 @@ int new_player(int height, int width, Player players[], Game *game) {
             case 'S':
             case 's':
                 if (strlen(USERNAME) > 0 && strlen(PASSWORD) > 0 && strlen(EMAIL) > 0 && isValidEmail(EMAIL) == 1 && checkpass(PASSWORD) == 1 && strlen(PASSWORD) > 6) {
-                    fprintf(player_data, "%s    %s    %s\n", USERNAME, PASSWORD, EMAIL);
+                    fprintf(player_data, "%s %s %s 0 0", USERNAME, PASSWORD, EMAIL);
                     fflush(player_data);
                     fclose(player_data);
                     delwin(new_player_win);

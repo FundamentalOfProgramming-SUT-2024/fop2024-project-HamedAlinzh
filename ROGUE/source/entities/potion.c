@@ -1,24 +1,5 @@
 #include "rogue.h"
 
-/* regular potion:
-recovery amount: 6
-ability: -
-probability in rooms: 50% */
-
-/* high-quality potion:
-recovery amount: 10
-ability: double the attack damage
-probability in rooms: 10% */
-
-/* magical potion:
-recovery amount: 8
-ability: double the speed
-probability in rooms: 10% */
-
-/* rotten potion:
-recovery amount: -3
-ability: -
-probability: 20% */
 
 
 int addpotion(Level *level){
@@ -30,6 +11,16 @@ int addpotion(Level *level){
         level->potion_num++;
     }
     return 1;
+}
+
+int addpotionBR(Room *room){
+    room->potions = malloc(sizeof(Potion *) * 20);
+    // room->potionnum = rand() % 5 + 5;
+    room->potionnum = 7; 
+    for (int i = 0; i < room->potionnum; i++){
+        room->potions[i] = selectpotion(10);
+        potionpos(room->potions[i], room);
+    }
 }
 
 Potion *selectpotion(int x){
@@ -49,6 +40,15 @@ Potion *selectpotion(int x){
         default:
             break;
     }
+}
+
+Potion* findpotionBR(Position* pos, Potion** potions, int potionnum){
+    for(int i = 0; i < potionnum; i++){
+        if (pos->y == potions[i]->pos->y && pos->x == potions[i]->pos->x){
+            return potions[i];
+        }
+    }
+    return NULL;
 }
 
 Potion *createpotion(wchar_t symbol[], int ability, int type, int roomesh, int color){
@@ -87,6 +87,14 @@ int grabpotion(Level *level, Potion *potion){
     }
 }
 
+int grab_potionT(Level *level, Potion *potion, int* count){
+    mvprintw(potion->pos->y, potion->pos->x, ".");
+    level->user->potion[level->user->potion_num] = potion;
+    level->user->potion_num++;
+    potion->is_there = 0;
+    *count -= 1;
+}
+
 int findpotioninven(Potion **potion, int type, int potion_num) {
     for (int i = 0; i < potion_num; i++) {
         if (potion[i] != NULL && potion[i]->type == type) {
@@ -96,9 +104,30 @@ int findpotioninven(Potion **potion, int type, int potion_num) {
     
 }
 
+void PrintPotionT(Room *room){
+    wchar_t health[] = { L'\U00002623', L'\0' }; // Biohazard sign
+    wchar_t speed[] = { L'\U0000269B', L'\0' };
+    wchar_t damage[] = { L'\U00002622', L'\0' };
+    attron(COLOR_PAIR(17));
+    for (int i = 0; i < room->potionnum; i++) {
+        if (room->potions[i]->is_there == 1){
+            if (room->potions[i]->type == 1)
+                mvaddwstr(room->potions[i]->pos->y, room->potions[i]->pos->x, health);
+            else if (room->potions[i]->type == 2)
+                mvaddwstr(room->potions[i]->pos->y, room->potions[i]->pos->x, speed);
+            else if (room->potions[i]->type == 3)
+                mvaddwstr(room->potions[i]->pos->y, room->potions[i]->pos->x, damage);
+        }
+    }
+    attroff(COLOR_PAIR(17));
+}
+
 void Printpotion(Potion *potion){
+    attron(COLOR_PAIR(17));
     if (potion->is_there == 1){
         mvaddwstr(potion->pos->y, potion->pos->x, potion->name);
     }
+    attroff(COLOR_PAIR(17));
 }
+
 

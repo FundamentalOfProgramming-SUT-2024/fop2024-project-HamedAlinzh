@@ -94,6 +94,10 @@ int OPTIONS(int height, int width, Player players, Game *game) {
                     int character_setup = CHAR_DESIGN(height, width, players, game);
                     wrefresh(options_win);
                 }
+                else if (selected == 2){
+                    int dif = dificulty(height, width, game);
+                    wrefresh(options_win);
+                }
                 else if (selected == n_options - 1) {
                     delwin(options_win);
                     return 1;
@@ -102,6 +106,68 @@ int OPTIONS(int height, int width, Player players, Game *game) {
         }
     }
 }
+
+int dificulty(int height, int width, Game *game){
+    clear();
+    refresh();
+
+    const char *items[] = {
+        "EASY",
+        "MEDIUM",
+        "HARD",
+        "BACK"
+    };
+    int n_options = sizeof(items) / sizeof(items[0]);
+    int selected = 0;
+    int key;
+    WINDOW *options_win = newwin(15, 20, (height - 15) / 2, (width - 20) / 2);
+    while (1) {
+        box(options_win, 0, 0);
+        for (int i = 0; i < n_options; i++) {
+            if (i == selected) {
+                wattron(options_win, A_REVERSE);
+                mvwprintw(options_win, 2 + 3 * i, 7, "%s", items[i]);
+                wattroff(options_win, A_REVERSE);
+            } else {
+                mvwprintw(options_win, 2 + 3 * i, 7, "%s", items[i]);
+            }
+        }
+        wrefresh(options_win);
+        key = getch();
+        switch (key) {
+            case KEY_UP:
+                selected--;
+                if (selected < 0) selected = n_options - 1;
+                break;
+            case KEY_DOWN:
+                selected++;
+                if (selected >= n_options) selected = 0;
+                break;
+            case '\n':
+                if (selected == 0) {
+                    game->dificulty = 0;
+                    delwin(options_win);
+                    return 1;;
+                }
+                else if (selected == 1) {
+                    game->dificulty = 1;
+                    delwin(options_win);
+                    return 1;
+                }
+                else if (selected == 2) {
+                    game->dificulty = 2;
+                    delwin(options_win);
+                    return 1;
+                }
+                else if (selected == n_options - 1) {
+                    delwin(options_win);
+                    return 1;
+                }
+            break;
+        }
+    }
+}
+
 int MUSIC_SELECTION(int height, int width) {
     clear();
     refresh();
@@ -199,13 +265,26 @@ int CHAR_DESIGN(int height, int width, Player player, Game *game){
                         character = wgetch(ch_des);
                         mvwprintw(ch_des, 12, 35, "CHARACTER CHOSEN: %c  ", character);
                         wrefresh(ch_des);
+                        game->player->symbol = character;
                         break;
                     }
                     noecho();
                     curs_set(0);
                 }
                 else if (selected == 0){
-                    player.color = 11;
+                    game->player->color = 11;
+                }
+                else if (selected == 1){
+                    game->player->color = 12;
+                }
+                else if (selected == 2){
+                    game->player->color = 13;
+                }
+                else if (selected == 3){
+                    game->player->color = 14;
+                }
+                else if (selected == 4){
+                    game->player->color = 15;
                 }
                 break;
             case 27: // ESC key

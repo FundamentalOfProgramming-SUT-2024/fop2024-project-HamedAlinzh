@@ -1,7 +1,7 @@
 #include "rogue.h"
-playerG *playersetup(){
-    playerG *newplayer;
-    newplayer = (playerG*)malloc(sizeof(playerG));
+playerG *playersetup(playerG *newplayer){
+    // playerG *newplayer;
+    // newplayer = (playerG*)malloc(sizeof(playerG));
     newplayer->pos = malloc(sizeof(Position));
     newplayer->selected_weapon = malloc(sizeof(Weapon));
     for (int i = 0; i < 5; i++){
@@ -20,8 +20,9 @@ playerG *playersetup(){
     newplayer->weapons_num = 1;
     newplayer->hunger = 10;
     newplayer->maxhunger = 10;
-    newplayer->symbol = '$';
-    newplayer->color = 15;
+    if(newplayer->symbol == '\0')
+        newplayer->symbol = '@';
+    
     return newplayer;
 }
 
@@ -136,9 +137,9 @@ int playermove(Position *newpos, playerG *user){
 }
 
 void Printplayer(playerG *player){
-    // attron(COLOR_PAIR(13));
+    attron(COLOR_PAIR(player->color));
     mvprintw(player->pos->y, player->pos->x, "%c", player->symbol);
-    // attroff(COLOR_PAIR(13));
+    attroff(COLOR_PAIR(player->color));
     move(player->pos->y, player->pos->x);
 }
 
@@ -279,7 +280,7 @@ int checkposition(Position *newposition, Level *level, Game *game, playerG *play
                 
                 movemonsterBR(game->levels[game->clevel]->battle_room, player);
                 
-                checkpositionBR(position, game->levels[game->clevel], game, player, x, x);
+                checkpositionBR(position, game->levels[game->clevel], game, player, x, x, x);
             }
             stop_music("66. The Final Battle.mp3");
             start_music("01. Main Menu.mp3");
@@ -292,8 +293,8 @@ int checkposition(Position *newposition, Level *level, Game *game, playerG *play
             treasureroom(game);
             int cht = 'w';
             Position *positionP = player->pos;
-            player->pos->y = game->levels[game->clevel]->treasure_room->pos.y + 10;
-            player->pos->x = game->levels[game->clevel]->treasure_room->pos.x + 10;
+            player->pos->y = game->levels[game->clevel]->potion_room->pos.y + 10;
+            player->pos->x = game->levels[game->clevel]->potion_room->pos.x + 10;
             int b = game->levels[game->clevel]->treasure_room->gold_num + game->levels[game->clevel]->treasure_room->taloysia_num;
             int *y = &b;
             clear();
@@ -305,17 +306,46 @@ int checkposition(Position *newposition, Level *level, Game *game, playerG *play
                 cht = getch();
                 if (cht != 'W' && cht != 'w' && cht != 'a' && cht != 'A' && cht != 'd' && cht != 'D' && cht != 's' && cht != 'S' && cht != 'e'
                     && cht != 'E' && cht != 'i' && cht != 'I' && cht != 'Q'&& cht != 'q' && cht != KEY_UP && cht != KEY_DOWN && cht != KEY_LEFT && cht != KEY_RIGHT && cht != '>' 
-                    && cht != 27 && ch != '1' && ch != '2' && ch != '3' && ch != '4' && ch != '6' && ch != '7' && ch != '8' && ch != '9' && ch != 'p' && ch != 'P' && ch != 'f' 
-                    && ch != 'F'){
+                    && cht != 27 && cht != '1' && cht != '2' && cht != '3' && cht != '4' && cht != '6' && cht != '7' && cht != '8' && cht != '9' && cht != 'p' && cht != 'P' && cht != 'f' 
+                    && cht != 'F'){
                     continue;
                 }
                 positionP = user_input(cht, game->levels[game->clevel]);
                 
-                checkpositionBR(positionP, game->levels[game->clevel], game, player, x, y);
+                checkpositionBR(positionP, game->levels[game->clevel], game, player, x, y, x);
             }
             stop_music("Apex_Legends_Main_Theme.mp3");
             start_music("01. Main Menu.mp3");
             return 4;
+            break;
+        case '?':
+            potionroom(game);
+            int chX = 'w';
+            Position *positionPT = player->pos;
+            player->pos->y = game->levels[game->clevel]->potion_room->pos.y + 2;
+            player->pos->x = game->levels[game->clevel]->potion_room->pos.x + 2;
+            int d = 3;
+            int *z = &d;
+            clear();
+            while(*z > 0){
+                gamestats(game->levels[game->clevel]);
+                PrintBroom(game->levels[game->clevel]->potion_room);
+                PrintPotionT(game->levels[game->clevel]->potion_room);
+                Printplayer(player);
+                chX = getch();
+                if (chX != 'W' && chX != 'w' && chX != 'a' && chX != 'A' && chX != 'd' && chX != 'D' && chX != 's' && chX != 'S' && chX != 'e'
+                    && chX != 'E' && chX != 'i' && chX != 'I' && chX != 'Q'&& chX != 'q' && chX != KEY_UP && chX != KEY_DOWN && chX != KEY_LEFT && chX != KEY_RIGHT && chX != '>' 
+                    && chX != 27 && chX != '1' && chX != '2' && chX != '3' && chX != '4' && chX != '6' && chX != '7' && chX != '8' && chX != '9' && chX != 'p' && chX != 'P' && chX != 'f' 
+                    && chX != 'F'){
+                    continue;
+                }
+                positionPT = user_input(chX, game->levels[game->clevel]);
+                
+                checkpositionBR(positionPT, game->levels[game->clevel], game, player, x, y, z);
+            }
+            player->pos->y = game->levels[game->clevel]->Pdoor->y;
+            player->pos->x = game->levels[game->clevel]->Pdoor->x;
+            game->levels[game->clevel]->isPdoor = 0;
             break;
         case 'S':
         case 'G':
@@ -338,24 +368,24 @@ int checkposition(Position *newposition, Level *level, Game *game, playerG *play
                 mvprintw(48, 110, "                                   ");
             }
             else {
-                mvprintw(48, 110, "                              ");
+                mvprintw(48, 110, "                                 ");
             }
             break;
         case '<':
             playermove(newposition, user);
             Printlevel(level);
             gamestats(level);
-            attron(COLOR_PAIR(1));
-            mvprintw(48, 110, "PRESS < TO COLLECT ");
-            attroff(COLOR_PAIR(1));
+            attron(COLOR_PAIR(11));
+            mvprintw(48, 110, "PRESS < TO GO TO THE PREVIOUS LEVEL ");
+            attroff(COLOR_PAIR(11));
             move(level->user->pos->y, level->user->pos->x);
             int chr = getch();
             if (chr == '<'){
                 gotopreviouslevel(game, player);    
-                mvprintw(48, 110, "                              ");
+                mvprintw(48, 110, "                                     ");
             }
             else {
-                mvprintw(48, 110, "                              ");
+                mvprintw(48, 110, "                                       ");
             }
             break;
             break;

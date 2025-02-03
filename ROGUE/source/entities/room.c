@@ -67,6 +67,25 @@ int treasureroom(Game *game){
     game->levels[game->clevel]->treasure_room = createtreasureroom((MAX_HEIGHT - 20) / 2, (MAX_WIDTH - 30) / 2, 20, 30);
 }
 
+int potionroom(Game *game){
+    clear();
+    refresh();
+    game->levels[game->clevel]->potion_room = createpotionroom((MAX_HEIGHT - 10) / 2, (MAX_WIDTH - 20) / 2, 10, 20);
+}
+
+Room* createpotionroom(int y, int x, int height, int width){
+    Room *nroom;
+    nroom = malloc(sizeof(Room));
+    nroom->pos.y = y;
+    nroom->pos.x = x;
+    nroom->height = height;
+    nroom->width = width;
+    nroom->is_there = 1;
+    addpotionBR(nroom);
+
+    return nroom;
+}
+
 int battleroom(Game *game){
     clear();
     refresh();

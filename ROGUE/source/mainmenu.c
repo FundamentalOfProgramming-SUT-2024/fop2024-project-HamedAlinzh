@@ -3,10 +3,12 @@
 
 int main(){
     // playerG *player = playersetup();
+    playerG *player = malloc(sizeof(playerG));
     Player players[100];
     Game *game = malloc(sizeof(Game));
-    // game->player = player;
+    game->player = player;
     game->clevel = 0;
+    game->dificulty = 2;
     int player_num = load_players(players, "SCOREBOARD.txt", game);
     setlocale(LC_ALL, "");
     initscr();
