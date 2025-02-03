@@ -253,7 +253,7 @@ int checkposition(Position *newposition, Level *level, Game *game, playerG *play
                 break;
             }
         case '^':
-            start_music("66. The Final Battle.mp3");
+            start_music("Apex_Legends_Main_Theme.mp3");
             battleroom(game);
             int ch = 'w';
             Position *position = player->pos;
@@ -282,7 +282,7 @@ int checkposition(Position *newposition, Level *level, Game *game, playerG *play
                 
                 checkpositionBR(position, game->levels[game->clevel], game, player, x, x, x);
             }
-            stop_music("66. The Final Battle.mp3");
+            stop_music("Apex_Legends_Main_Theme.mp3");
             start_music("01. Main Menu.mp3");
             player->pos->y = game->levels[game->clevel]->trap->y;
             player->pos->x = game->levels[game->clevel]->trap->x;
@@ -293,8 +293,8 @@ int checkposition(Position *newposition, Level *level, Game *game, playerG *play
             treasureroom(game);
             int cht = 'w';
             Position *positionP = player->pos;
-            player->pos->y = game->levels[game->clevel]->potion_room->pos.y + 10;
-            player->pos->x = game->levels[game->clevel]->potion_room->pos.x + 10;
+            player->pos->y = game->levels[game->clevel]->treasure_room->pos.y + 10;
+            player->pos->x = game->levels[game->clevel]->treasure_room->pos.x + 10;
             int b = game->levels[game->clevel]->treasure_room->gold_num + game->levels[game->clevel]->treasure_room->taloysia_num;
             int *y = &b;
             clear();

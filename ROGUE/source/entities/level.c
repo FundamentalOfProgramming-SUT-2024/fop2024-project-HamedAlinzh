@@ -152,6 +152,7 @@ Room** roomsetup(Level *level) {
     pathFind(rooms[4]->door[2], rooms[5]->door[0], level->pathGrid[5]);
     pathFind(rooms[2]->door[3], rooms[4]->door[1], level->pathGrid[6]);
     pathFind(rooms[0]->door[0], rooms[2]->door[0], level->pathGrid[7]);
+    // pathFind(rooms[4]->door[0], rooms[5]->door[0], level->pathGrid[8]);
     clear();
 
     return rooms;

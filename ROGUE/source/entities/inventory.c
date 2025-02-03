@@ -6,6 +6,7 @@ int inventory(Level *level){
     refresh();
     const char *weapons[] = { "MACE", "SWORD", "DAGGER", "MAGIC STAFF", "BOW AND ARROW"};
     int mace = 0, dagger = 0, magic = 0, bow = 0, sword = 0;
+    int macecount = 0, daggercount = 0, magiccount = 0, bowcount = 0, swordcount = 0;
     for (int i = 0; i < level->user->weapons_num; i++){
         switch (level->user->weapons[i]->type){
             case 1:
@@ -13,12 +14,15 @@ int inventory(Level *level){
                 break;
             case 2:
                 dagger++;
+                daggercount += 10;
                 break;
             case 3:
                 magic++;
+                magiccount += 8;
                 break;
             case 4:
                 bow++;
+                bowcount += 20;
                 break;
             case 5:
                 sword++;
@@ -53,9 +57,9 @@ int inventory(Level *level){
 
     mvwprintw(inventory_win, 8 + 0, 42, "%d", mace);
     mvwprintw(inventory_win, 8 + 6, 42, "%d", sword);
-    mvwprintw(inventory_win, 8 + 12, 42, "%d", dagger);
-    mvwprintw(inventory_win, 8 + 18, 42, "%d", magic);
-    mvwprintw(inventory_win, 8 + 24, 42, "%d", bow);
+    mvwprintw(inventory_win, 8 + 12, 42, "%d", daggercount);
+    mvwprintw(inventory_win, 8 + 18, 42, "%d", magiccount);
+    mvwprintw(inventory_win, 8 + 24, 42, "%d", bowcount);
 
     mvwprintw(inventory_win, 8 + 0, 54, "-5-");
     mvwprintw(inventory_win, 8 + 6, 54, "-10-");
