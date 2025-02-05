@@ -121,6 +121,45 @@ Position* user_input(int ch, Level* level){
                     level->user->selected_weapon = level->user->weapons[0];
                     break;
                 }
+                int xdis = user->pos->x - posi->x;
+                int ydis = user->pos->y - posi->y;
+                if (xdis == 0){
+                    if (ydis >= 0){
+                        for (int i = 0; i < ydis; i++){
+                            mvaddwstr(user->pos->y - i - 1, user->pos->x, user->selected_weapon->name);
+                            move(user->pos->y, user->pos->x);
+                            getch();
+                            mvprintw(user->pos->y - i - 1, user->pos->x, ".");
+                        }
+                    }
+                    else if (ydis < 0){
+                        for (int i = 0; i < -ydis; i++){
+                            mvaddwstr(user->pos->y + i + 1, user->pos->x, user->selected_weapon->name);
+                            move(user->pos->y, user->pos->x);
+                            getch();
+                            mvprintw(user->pos->y + i + 1, user->pos->x, ".");
+                        }
+                    }
+                }
+                else if (ydis == 0){
+                    if (xdis >= 0){
+                        for (int i = 0; i < xdis; i++){
+                            mvaddwstr(user->pos->y, user->pos->x - i - 1, user->selected_weapon->name);
+                            move(user->pos->y, user->pos->x);
+                            getch();
+                            mvprintw(user->pos->y, user->pos->x - i - 1, ".");
+                        }
+                    }
+                    else if (xdis < 0){
+                        for (int i = 0; i < -xdis; i++){
+                            mvaddwstr(user->pos->y, user->pos->x + i + 1, user->selected_weapon->name);
+                            move(user->pos->y, user->pos->x);
+                            getch();
+                            mvprintw(user->pos->y, user->pos->x + i + 1, ".");
+                        }
+                    }
+                }
+
                 level->user->selected_weapon->pos->y = posi->y;
                 level->user->selected_weapon->pos->x = posi->x;
                 level->user->selected_weapon->is_there = 1;

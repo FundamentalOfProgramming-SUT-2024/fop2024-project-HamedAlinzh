@@ -4,7 +4,7 @@
 int start_menu(int height, int width, Player players[], Game *game){
     clear();
     refresh();
-    char *options[] = {" PLAY AS A GUEST ", "    NEW PLAYER    ", "      LOGIN      ", "BACK TO MAIN MENU"};
+    char *options[] = {"   RESUME GAME ", " PLAY AS A GUEST ", "    NEW PLAYER    ", "      LOGIN      ", "BACK TO MAIN MENU"};
     int num = sizeof(options) / sizeof(options[0]);
     int selected = 0;
     int key;
@@ -47,10 +47,10 @@ int start_menu(int height, int width, Player players[], Game *game){
         for (int i = 0; i < num; i++) {
             if (i == selected) {
                 wattron(start_menu, A_REVERSE);
-                mvwprintw(start_menu, 8 + 7 * i, 10, "%s", options[i]);
+                mvwprintw(start_menu, 5 + 7 * i, 10, "%s", options[i]);
                 wattroff(start_menu, A_REVERSE);
             } else {
-                mvwprintw(start_menu, 8 + 7 * i, 10, "%s", options[i]);
+                mvwprintw(start_menu, 5 + 7 * i, 10, "%s", options[i]);
             }
         }
         wrefresh(start_menu);
@@ -65,7 +65,10 @@ int start_menu(int height, int width, Player players[], Game *game){
                 if (selected >= num) selected = 0;
                 break;
             case '\n': 
-                if (selected == 0){ //! FILL!!!!
+                if (selected == 0){
+                    continue;
+                }
+                else if (selected == 1){ //! FILL!!!!
                     curs_set(1);
                     game->guest = 1;
                     start(game, game->player);
@@ -73,16 +76,16 @@ int start_menu(int height, int width, Player players[], Game *game){
                     curs_set(0);
                     refresh();
                 }
-                else if (selected == 1){
+                else if (selected == 2){
                     new_player(height, width, players, game);
                     continue;
                     // wrefresh(start_menu);
                 }
-                else if (selected == 2){
+                else if (selected == 3){
                     login(height, width, players, game);
                     continue;
                 }
-                else if (selected == 3){
+                else if (selected == 4){
                     return 0;
                     break;
                 }
@@ -238,7 +241,7 @@ int login(int height, int width, Player players[], Game *game) {
     fclose(player_data);
 
     // Now the login code works as expected.
-    char *options[] = {"ENTER THE GAME", "USERNAME:", "PASSWORD:", "BACK"};
+    char *options[] = {"ENTER THE GAME", "USERNAME:", "PASSWORD:", "PROFILE MENU", "BACK"};
     int num = sizeof(options) / sizeof(options[0]);
     int selected = 0;
     int key;
@@ -247,7 +250,7 @@ int login(int height, int width, Player players[], Game *game) {
     int user_index = -1;
     int canpass = 0;
 
-    WINDOW *login_win = newwin(30, 80, (height - 30) / 2, (width - 80) / 2);
+    WINDOW *login_win = newwin(35, 80, (height - 35) / 2, (width - 80) / 2);
     mvwprintw(login_win, 28, 40, "PRESS F IF YOU FORGET YOUR PASSWORD!");
     while (1) {
         wrefresh(login_win);
@@ -326,10 +329,20 @@ int login(int height, int width, Player players[], Game *game) {
                     }
                     curs_set(0);
                     noecho();
-                } else if (selected == 3) {
+                } else if (selected == 4) {
                     delwin(login_win);
                     return 0;
-                } else if (selected == 0){
+                } 
+                else if (selected == 3){
+                    if (user[0] == '\0' || pass[0] == '\0'){
+                        mvwprintw(login_win, 22, 22, "FIRST ENTER USERNAME AND PASSWORD");
+                    }
+                    else {
+                        profilemenu(height, width, user, pass, game);
+                        continue;
+                    }
+                }
+                else if (selected == 0){
                     if (canpass){
                         curs_set(1);
                         game->guest = 0;
@@ -371,6 +384,54 @@ int load_players(Player players[], const char *filename, Game* game) {
 
     fclose(file);
     return count;
+}
+
+int profilemenu(int height, int width, char user[], char pass[], Game *game) {
+    clear();
+    refresh();
+
+    FILE *player_data = fopen("SCOREBOARD.txt", "r");
+    if (!player_data) {
+        mvprintw(height / 2, (width - 20) / 2, "Unable to open scoreboard file!");
+        refresh();
+        getch();
+        return 1;
+    }
+
+    char line[256];
+    char found_email[100] = "Email not found";
+    int experience = 0; // To store the total experience
+    int username_count = 0; // To count how many times the username appears
+
+    while (fgets(line, sizeof(line), player_data)) {
+        char file_user[50], file_pass[50], file_email[100];
+        int score, level;
+        sscanf(line, "%s %s %s %d %d", file_user, file_pass, file_email, &score, &level);
+
+        if (strcmp(file_user, user) == 0 && strcmp(file_pass, pass) == 0) {
+            strcpy(found_email, file_email);
+            experience += level; // Add the level (experience) to the total
+            username_count++; // Increment the count of the username
+        }
+    }
+    fclose(player_data);
+
+    WINDOW *new_player_win = newwin(12, 50, (height - 12) / 2, (width - 50) / 2);
+    wattron(new_player_win, COLOR_PAIR(13));
+    box(new_player_win, 0, 0);
+    mvwprintw(new_player_win, 1, 18, "PROFILE MENU");
+    mvwprintw(new_player_win, 2, 1, "USER NAME: %s", user);
+    mvwprintw(new_player_win, 5, 1, "PASSWORD: %s", pass);
+    mvwprintw(new_player_win, 8, 1, "EMAIL: %s", found_email);
+    mvwprintw(new_player_win, 10, 1, "EXPERIENCE: %d", experience); // Display the total experience
+
+    wrefresh(new_player_win);
+    wattroff(new_player_win, COLOR_PAIR(13));
+
+    getch();
+    delwin(new_player_win);
+
+    return 0;
 }
 
 int new_player(int height, int width, Player players[], Game *game) {

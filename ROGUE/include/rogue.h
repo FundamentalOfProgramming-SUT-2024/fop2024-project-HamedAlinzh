@@ -367,6 +367,7 @@ int isValidEmail(const char *email);
 int CHAR_DESIGN(int height, int width, Player players, Game* game);
 int start_menu(int height, int width, Player players[], Game *game);
 int login(int height, int width, Player players[], Game* game);
+int profilemenu(int height, int width, char user[], char pass[], Game *game);
 
 
 #endif

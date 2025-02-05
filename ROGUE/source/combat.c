@@ -28,9 +28,9 @@ int combat(playerG* player, Monster* monster, int ord){
             player->xp += 1;
             player->hunger--;
             // attron(COLOR_PAIR(21));
-            mvprintw(48, 95, "MONSTER KILLED!");
+            // mvprintw(48, 95, "MONSTER KILLED!");
             move(player->pos->y, player->pos->x);
-            // attroff(COLOR_PAIR(21));
+            attroff(COLOR_PAIR(21));
             // getch();
             return 1;
         }
